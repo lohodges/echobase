@@ -239,7 +239,7 @@ resource "aws_db_instance" "echobase_rds01" {
   skip_final_snapshot = true
 
   # TODO: student sets multi_az / backups / monitoring as stretch goals
-  # # added by Lonnie Hodges: to add later
+  # added by Lonnie Hodges: to add later
 
   tags = {
     Name = "${local.name_prefix}-rds01"
@@ -294,8 +294,10 @@ resource "aws_iam_role_policy_attachment" "echobase_ec2_ssm_attach" {
 
 # Explanation: EC2 must read secrets/params during recovery—give it access (students should scope it down).
 resource "aws_iam_role_policy_attachment" "echobase_ec2_secrets_attach" {
-  role       = aws_iam_role.echobase_ec2_role01.name
+  role = aws_iam_role.echobase_ec2_role01.name
+  # added by Lonnie Hodges
   policy_arn = aws_iam_policy.policy_ec2_read_secret.arn
+  # commented out line below by Lonnie Hodges
   #policy_arn = "arn:aws:iam::aws:policy/SecretsManagerReadWrite" # TODO: student replaces w/ least privilege
 }
 
