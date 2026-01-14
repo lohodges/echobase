@@ -1,5 +1,5 @@
 variable "aws_region" {
-  description = "AWS Region for the Chewbacca fleet to patrol."
+  description = "AWS Region for the Echobase fleet to patrol."
   type        = string
   default     = "us-east-2"
   #default     = "ap-northeast-3"

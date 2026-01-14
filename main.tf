@@ -265,7 +265,8 @@ resource "aws_iam_policy" "policy_ec2_read_secret" {
         "Sid" : "ReadSpecificSecret",
         "Effect" : "Allow",
         "Action" : ["secretsmanager:GetSecretValue"],
-        "Resource" : "arn:aws:secretsmanager:<REGION>:<ACCOUNT ID>:secret:echobase/rds/mysql*"
+        # "Resource" : "arn:aws:secretsmanager:<REGION>:<ACCOUNT ID>:secret:echobase/rds/mysql*"
+        "Resource" : "arn:aws:secretsmanager:us-east-2:746669200167:secret:echobase/rds/mysql*"
       }
     ]
   })
@@ -378,6 +379,11 @@ resource "aws_ssm_parameter" "echobase_db_name_param" {
 # Explanation: Secrets Manager is Echobase’s locked holster—credentials go here, not in code.
 resource "aws_secretsmanager_secret" "echobase_db_secret01" {
   name = "${local.name_prefix}/rds/mysql"
+
+  # added by Lonnie Hodges
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 # Explanation: Secret payload—students should align this structure with their app (and support rotation later).
