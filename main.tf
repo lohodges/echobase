@@ -297,9 +297,9 @@ resource "aws_iam_role_policy_attachment" "echobase_ec2_ssm_attach" {
 resource "aws_iam_role_policy_attachment" "echobase_ec2_secrets_attach" {
   role = aws_iam_role.echobase_ec2_role01.name
   # added by Lonnie Hodges
-  policy_arn = aws_iam_policy.policy_ec2_read_secret.arn
+  #policy_arn = aws_iam_policy.policy_ec2_read_secret.arn
   # commented out line below by Lonnie Hodges
-  #policy_arn = "arn:aws:iam::aws:policy/SecretsManagerReadWrite" # TODO: student replaces w/ least privilege
+  policy_arn = "arn:aws:iam::aws:policy/SecretsManagerReadWrite" # TODO: student replaces w/ least privilege
 }
 
 # Explanation: CloudWatch logs are the “ship’s black box”—you need them when things explode.
@@ -379,11 +379,8 @@ resource "aws_ssm_parameter" "echobase_db_name_param" {
 # Explanation: Secrets Manager is Echobase’s locked holster—credentials go here, not in code.
 resource "aws_secretsmanager_secret" "echobase_db_secret01" {
   name = "${local.name_prefix}/rds/mysql"
-
   # added by Lonnie Hodges
-  lifecycle {
-    prevent_destroy = true
-  }
+  recovery_window_in_days = 0
 }
 
 # Explanation: Secret payload—students should align this structure with their app (and support rotation later).
