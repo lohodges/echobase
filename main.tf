@@ -238,6 +238,9 @@ resource "aws_db_instance" "echobase_rds01" {
   publicly_accessible = false
   skip_final_snapshot = true
 
+  # added by Lonnie Hodges
+  enabled_cloudwatch_logs_exports = ["audit", "error", "general", "slowquery", "iam-db-auth-error"]
+
   # TODO: student sets multi_az / backups / monitoring as stretch goals
   # added by Lonnie Hodges: to add later
 
@@ -380,6 +383,7 @@ resource "aws_ssm_parameter" "echobase_db_name_param" {
 resource "aws_secretsmanager_secret" "echobase_db_secret01" {
   name = "${local.name_prefix}/rds/mysql"
   # added by Lonnie Hodges
+  # When I run terraform destroy, I want to immediately destroy the secret.
   recovery_window_in_days = 0
 }
 
@@ -413,9 +417,13 @@ resource "aws_cloudwatch_log_group" "echobase_log_group01" {
 ############################################
 # Custom Metric + Alarm (Skeleton)
 ############################################
+# added by Lonnie Hodges 2026-01-14
+# TBD
+
 
 # Explanation: Metrics are Echobase’s growls—when they spike, something is wrong.
 # NOTE: Students must emit the metric from app/agent; this just declares the alarm.
+# Added by Lonnie Hodges:  https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/aws-services-cloudwatch-metrics.html
 resource "aws_cloudwatch_metric_alarm" "echobase_db_alarm01" {
   alarm_name          = "${local.name_prefix}-db-connection-failure"
   comparison_operator = "GreaterThanOrEqualToThreshold"
