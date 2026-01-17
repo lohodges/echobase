@@ -332,11 +332,23 @@ resource "aws_instance" "echobase_ec201" {
   # TODO: student supplies user_data to install app + CW agent + configure log shipping
   # added by Lonnie Hodges
   user_data = file("${path.module}/user_data.sh")
+  key_name  = aws_key_pair.linux.key_name
 
   tags = {
     Name = "${local.name_prefix}-ec201"
   }
 }
+
+# added by Lonnie Hodges 2026-01-16
+resource "aws_key_pair" "linux" {
+  public_key      = file("${path.module}/id_aws_ec2_ed25519.pub")
+  key_name_prefix = "echobase-"
+
+  tags = {
+    Name = "${local.name_prefix}-ec201-keypair"
+  }
+}
+# ^^^ added by Lonnie Hodges 2026-01-16
 
 ############################################
 # Parameter Store (SSM Parameters)
@@ -414,16 +426,19 @@ resource "aws_cloudwatch_log_group" "echobase_log_group01" {
   }
 }
 
+# added by Lonnie Hodges 2026-01-15
+resource "aws_cloudwatch_log_stream" "echobase_log_stream01" {
+  name           = "${local.name_prefix}-rds-app"
+  log_group_name = aws_cloudwatch_log_group.echobase_log_group01.name
+}
+
 ############################################
 # Custom Metric + Alarm (Skeleton)
 ############################################
-# added by Lonnie Hodges 2026-01-14
-# TBD
-
-
 # Explanation: Metrics are Echobase’s growls—when they spike, something is wrong.
 # NOTE: Students must emit the metric from app/agent; this just declares the alarm.
 # Added by Lonnie Hodges:  https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/aws-services-cloudwatch-metrics.html
+# https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/download-CloudWatch-Agent-on-EC2-Instance-commandline-first.html
 resource "aws_cloudwatch_metric_alarm" "echobase_db_alarm01" {
   alarm_name          = "${local.name_prefix}-db-connection-failure"
   comparison_operator = "GreaterThanOrEqualToThreshold"

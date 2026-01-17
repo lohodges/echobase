@@ -103,7 +103,7 @@ Expected:
     "ARN": "arn:aws:secretsmanager:us-east-2:746669200167:secret:lab/rds/mysql-VxRjeA",
     "Name": "lab/rds/mysql",
     "VersionId": "276e03b4-480e-4623-9323-62b630fc3857",
-    "SecretString": "{\"username\":\"admin\",\"password\":\"AvyRjPSrnnP4qXrg\",\"engine\":\"mysql\",\"host\":\"lab-mysql.cxo22gqsc8z4.us-east-2.rds.amazonaws.com\",\"port\":3306,\"dbInstanceIdentifier\":\"lab-mysql\"}",
+    "SecretString": "{\"username\":\"admin\",\"password\":\"<PASSWORD REMOVED>\",\"engine\":\"mysql\",\"host\":\"lab-mysql.cxo22gqsc8z4.us-east-2.rds.amazonaws.com\",\"port\":3306,\"dbInstanceIdentifier\":\"lab-mysql\"}",
     "VersionStages": [
         "AWSCURRENT"
     ],
@@ -114,10 +114,29 @@ Expected:
 7.4 Verify CloudWatch Log Group Exists
     
     aws logs describe-log-groups \
-      --log-group-name-prefix /aws/ec2/lab-rds-app
+      --log-group-name-prefix /aws/ec2/echobase-rds-app
 
 Expected:
   Log group present
+```
+1c_terrraform main  ✗ aws logs describe-log-groups \
+      --log-group-name-prefix /aws/ec2/echobase-rds-app
+{
+    "logGroups": [
+        {
+            "logGroupName": "/aws/ec2/echobase-rds-app",
+            "creationTime": 1768515272605,
+            "retentionInDays": 7,
+            "metricFilterCount": 0,
+            "arn": "arn:aws:logs:us-east-2:746669200167:log-group:/aws/ec2/echobase-rds-app:*",
+            "storedBytes": 0,
+            "logGroupClass": "STANDARD",
+            "logGroupArn": "arn:aws:logs:us-east-2:746669200167:log-group:/aws/ec2/echobase-rds-app",
+            "deletionProtectionEnabled": false
+        }
+    ]
+}
+```
 
 7.5 Verify DB Failure Logs Appear
 Simulate failure (examples):
@@ -128,7 +147,7 @@ Simulate failure (examples):
 Then check logs:
 
     aws logs filter-log-events \
-      --log-group-name /aws/ec2/lab-rds-app \
+      --log-group-name /aws/ec2/echobase-rds-app \
       --filter-pattern "ERROR"
 
 Expected:
