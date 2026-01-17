@@ -5,6 +5,27 @@ locals {
   name_prefix = var.project_name
 }
 
+# added by Lonnie Hodges on 2026-01-17
+############################################
+# Bonus A - Data + Locals
+############################################
+
+# Explanation: Chewbacca wants to know “who am I in this galaxy?” so ARNs can be scoped properly.
+data "aws_caller_identity" "echobase_self01" {}
+
+# Explanation: Region matters—hyperspace lanes change per sector.
+data "aws_region" "echobase_region01" {}
+
+locals {
+  # Explanation: Name prefix is the roar that echoes through every tag.
+  echobase_prefix = var.project_name
+
+  # TODO: Students should lock this down after apply using the real secret ARN from outputs/state
+  echobase_secret_arn_guess = "arn:aws:secretsmanager:${data.aws_region.echobase_region01.name}:${data.aws_caller_identity.echobase_self01.account_id}:secret:${local.echobase_prefix}/rds/mysql*"
+}
+# ^^^ added by Lonnie Hodges on 2026-01-17
+
+
 ############################################
 # VPC + Internet Gateway
 ############################################
@@ -158,13 +179,14 @@ resource "aws_vpc_security_group_ingress_rule" "http" {
   to_port           = 80
 }
 
-resource "aws_vpc_security_group_ingress_rule" "ssh" {
-  security_group_id = aws_security_group.echobase_ec2_sg01.id
-  cidr_ipv4         = "0.0.0.0/0"
-  from_port         = 22
-  ip_protocol       = "tcp"
-  to_port           = 22
-}
+# TO BE DELETED LATER
+# resource "aws_vpc_security_group_ingress_rule" "ssh" {
+#   security_group_id = aws_security_group.echobase_ec2_sg01.id
+#   cidr_ipv4         = "0.0.0.0/0"
+#   from_port         = 22
+#   ip_protocol       = "tcp"
+#   to_port           = 22
+# }
 
 # TODO: student ensures outbound allows DB port to RDS SG (or allow all outbound)
 # added by Lonnie Hodges
@@ -243,6 +265,8 @@ resource "aws_db_instance" "echobase_rds01" {
 
   # TODO: student sets multi_az / backups / monitoring as stretch goals
   # added by Lonnie Hodges: to add later
+
+
 
   tags = {
     Name = "${local.name_prefix}-rds01"
@@ -339,8 +363,6 @@ resource "aws_instance" "echobase_ec201" {
   }
 }
 
-
-
 # added by Lonnie Hodges 2026-01-16
 resource "aws_key_pair" "linux" {
   public_key      = file("${path.module}/id_aws_ec2_ed25519.pub")
@@ -351,6 +373,28 @@ resource "aws_key_pair" "linux" {
   }
 }
 # ^^^ added by Lonnie Hodges 2026-01-16
+
+# added by Lonnie Hodges on 2026-01-17
+# from bonus_a.tf
+############################################
+# Move EC2 into PRIVATE subnet (no public IP)
+############################################
+
+# Explanation: Echobase hates exposure—private subnets keep your compute off the public holonet.
+resource "aws_instance" "echobase_ec201_private_bonus" {
+  ami                    = var.ec2_ami_id
+  instance_type          = var.ec2_instance_type
+  subnet_id              = aws_subnet.echobase_private_subnets[0].id
+  vpc_security_group_ids = [aws_security_group.echobase_ec2_sg01.id]
+  iam_instance_profile   = aws_iam_instance_profile.echobase_instance_profile01.name
+
+  # TODO: Students should remove/disable SSH inbound rules entirely and rely on SSM.
+  # TODO: Students add user_data that installs app + CW agent; for true hard mode use a baked AMI.
+
+  tags = {
+    Name = "${local.echobase_prefix}-ec201-private"
+  }
+}
 
 ############################################
 # Parameter Store (SSM Parameters)

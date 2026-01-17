@@ -88,6 +88,7 @@ variable "sns_email_endpoint" {
 }
 
 # added by Lonnie Hodges 2026-01-17
+# copied from 1c_bonus_variables.tf
 variable "domain_name" {
   description = "aliases for passportog.com"
   type        = string
@@ -98,5 +99,35 @@ variable "app_subdomain" {
   description = "aliases for app.passportog.com"
   type        = string
   default     = "app.passportog.com"
+}
+
+variable "certificate_validation_method" {
+  description = "ACM validation method. Students can do DNS (Route53) or EMAIL."
+  type        = string
+  default     = "DNS"
+}
+
+variable "enable_waf" {
+  description = "Toggle WAF creation."
+  type        = bool
+  default     = true
+}
+
+variable "alb_5xx_threshold" {
+  description = "Alarm threshold for ALB 5xx count."
+  type        = number
+  default     = 10
+}
+
+variable "alb_5xx_period_seconds" {
+  description = "CloudWatch alarm period."
+  type        = number
+  default     = 300
+}
+
+variable "alb_5xx_evaluation_periods" {
+  description = "Evaluation periods for alarm."
+  type        = number
+  default     = 1
 }
 # ^^^ added by Lonnie Hodges 2026-01-17
