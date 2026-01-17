@@ -56,4 +56,5 @@ venv/
 
 _archived/
 
+# added by Lonnie Hodges to not share the private and public ssh keys
 *id_aws_ec2_ed25519*
