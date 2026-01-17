@@ -156,11 +156,43 @@ Expected:
 7.6 Verify CloudWatch Alarm
 
     aws cloudwatch describe-alarms \
-      --alarm-name-prefix lab-db-connection
-
+      --alarm-name-prefix echobase
 Expected:
   Alarm present
   State transitions to ALARM during failure
+
+```
+1c_terrraform lhj-lab-1a-1b-1c  ❯ aws cloudwatch describe-alarms       --alarm-name-prefix echobase
+{
+    "MetricAlarms": [
+        {
+            "AlarmName": "echobase-db-connection-failure",
+            "AlarmArn": "arn:aws:cloudwatch:us-east-2:746669200167:alarm:echobase-db-connection-failure",
+            "AlarmConfigurationUpdatedTimestamp": "2026-01-17T14:20:01.124000-05:00",
+            "ActionsEnabled": true,
+            "OKActions": [],
+            "AlarmActions": [
+                "arn:aws:sns:us-east-2:746669200167:echobase-db-incidents"
+            ],
+            "InsufficientDataActions": [],
+            "StateValue": "INSUFFICIENT_DATA",
+            "StateReason": "Unchecked: Initial alarm creation",
+            "StateUpdatedTimestamp": "2026-01-17T14:20:01.124000-05:00",
+            "MetricName": "DBConnectionErrors",
+            "Namespace": "Lab/RDSApp",
+            "Statistic": "Sum",
+            "Dimensions": [],
+            "Period": 300,
+            "EvaluationPeriods": 1,
+            "Threshold": 3.0,
+            "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+            "TreatMissingData": "missing",
+            "StateTransitionedTimestamp": "2026-01-17T14:20:01.124000-05:00"
+        }
+    ],
+    "CompositeAlarms": []
+}
+```
 
 7.7 Incident Recovery Verification
 After restoring correct credentials or connectivity:
