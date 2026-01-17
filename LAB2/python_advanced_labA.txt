@@ -1,0 +1,114 @@
+This is the final evolution: one command to collect truth, one command to generate judgment.
+
+You now have:
+
+Chewbacca (Terraform)  → builds reality
+Malgus (Python)        → interrogates reality
+Bedrock                → summarizes reality
+Human                  → owns responsibility
+
+Below is the final Dark Side upgrade.
+
+MALGUS CLI — Phase IV
+collect-evidence (Auto-IR Fuel Generator)
+This subcommand does exactly what real on-call engineers do under pressure:
+
+      Pull alarms
+      Run standardized Logs Insights queries
+      Capture WAF behavior
+      Capture CloudFront cache signals
+      Capture SSM + Secrets metadata only
+      Write a single evidence bundle that feeds directly into Bedrock
+
+No dashboards. No clicking. No vibes.
+
+What collect-evidence Produces
+
+A single JSON file like:
+
+{
+  "incident_id": "IR-2025-02-08-001",
+  "time_window_utc": { "start": "...", "end": "..." },
+  "alarms": [...],
+  "logs": {
+    "app_errors": [...],
+    "app_rate": [...],
+    "waf_actions": [...],
+    "waf_top_ips": [...]
+  },
+  "cloudfront": {
+    "distribution_id": "...",
+    "notes": "cache behavior inferred via headers"
+  },
+  "config_sources": {
+    "ssm_meta": {...},
+    "secrets_meta": {...}
+  }
+}
+
+This file is:
+    machine-readable
+    auditable
+    safe (no secrets)
+    Bedrock-ready
+
+Code: Add collect-evidence.py to malgus_cli.py
+1️⃣ Add helper functions (near top of file)
+
+2️⃣ Add the subcommand implementation: sub_implementation.py
+
+3️⃣ Wire it into the CLI parser
+Add this inside build_parser(): cli_parser.py
+
+How to Use It (This Is the Magic)
+Step 1 — Collect evidence
+
+    python malgus_cli.py collect-evidence \
+      --incident-id IR-001 \
+      --minutes 20 \
+      --app-log-group "/aws/ec2/chewbacca-app" \
+      --waf-log-group "aws-waf-logs-chewbacca-webacl01" \
+      --secret-id chewbacca/rds/mysql \
+      --out evidence.json
+
+Step 2 — Generate report
+
+    python malgus_cli.py bedrock-report \
+      --model-id <BEDROCK_MODEL_ID> \
+      --evidence-json evidence.json \
+      --out incident-report.md
+
+Step 3 — Human review (required)
+    Validate claims against evidence
+    Classify trust level (Green / Yellow / Red)
+    Submit both files
+
+Why Darth Malgus Is Extremely Pleased
+This pipeline:
+      Eliminates panic
+      Eliminates dashboard hopping
+      Preserves evidence
+      Forces discipline
+      Makes AI safe
+
+Malgus does not “debug.”
+Malgus interrogates reality until it confesses.
+
+Interview Nuclear Option (Students Should Memorize)
+    --> “I built a Python-based incident response CLI that standardizes evidence collection across
+        CloudWatch, WAF, and config sources, then feeds that evidence into a Bedrock model to
+        generate a draft incident report — which I explicitly verify before submission.”
+
+That sentence alone puts them ahead of 95% of candidates.
+
+
+
+
+
+
+
+
+
+
+
+

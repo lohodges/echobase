@@ -1,0 +1,122 @@
+Lab 2B-Honors: Origin-Driven Caching
+Goal
+Implement safe caching for dynamic web/API where:
+    If origin responds with Cache-Control: public, s-maxage=30 → CloudFront caches 30 seconds
+    If origin responds with Cache-Control: private, no-store (or no cache-control) → CloudFront does not cache
+    Cache key includes only what truly varies the response
+    Students prove correctness using:
+      x-cache (Hit from cloudfront, Miss from cloudfront) 
+      Age header behavior
+      and app-visible evidence
+
+What students add to the app (EC2)
+Create two endpoints:
+
+1) Public endpoint (cacheable)
+GET /api/public-feed
+Response must include:
+    Cache-Control: public, s-maxage=30, max-age=0
+      s-maxage is for shared caches (CDNs). 
+
+Example behavior:
+    returns “server_time_utc” and “message of the minute”
+    should change every request at origin, but CloudFront will hold it for 30 seconds
+
+2) Private endpoint (never cache)
+GET /api/list (or /api/user-feed)
+Response must include:
+    Cache-Control: private, no-store
+This prevents user mixups and stale reads.
+
+Terraform: Honors Overlay
+1) Reference AWS managed policies (data sources)
+
+Use Terraform data sources to grab managed cache policies by name. HashiCorp documents the data source pattern. 
+Terraform Registry
+
+Create lab2b_honors_origin_driven.tf:
+
+2) Patch CloudFront behaviors (the Honors behavior matrix)
+A) /api/public-feed = origin-driven caching
+
+Use UseOriginCacheControlHeaders (or QueryStrings variant if needed).
+
+B) /api/* = still safe default (no caching)
+Keep your earlier “API caching disabled” policy for everything else.
+
+C) /static/* remains aggressive
+No change from Lab 2B baseline.
+
+Honors Verification (students must prove origin-driven caching)
+1) Prove CloudFront is honoring origin Cache-Control
+A) First request should be MISS
+
+    curl -i https://chewbacca-growl.com/api/public-feed | sed -n '1,20p'
+
+Check headers:
+    Cache-Control: public, s-maxage=30, max-age=0 (from origin)
+    x-cache: Miss from cloudfront (or similar)
+    Age: likely absent or 0
+
+x-cache meanings are documented by AWS
+
+B) Second request within 30 seconds should be HIT
+
+    curl -i https://chewbacca-growl.com/api/public-feed | sed -n '1,20p'
+
+Expected:
+    x-cache: Hit from cloudfront 
+    Age: increases on subsequent hits (cache indicator)
+    Body should remain identical until TTL expires
+
+C) After 35 seconds, it should MISS again
+
+    sleep 35
+    curl -i https://chewbacca-growl.com/api/public-feed | sed -n '1,20p'
+
+Expected:
+    x-cache becomes Miss or RefreshHit
+    Body updates
+
+2) Prove “no-store” never caches (safety proof)
+
+    curl -i https://chewbacca-growl.com/api/list | sed -n '1,30p'
+    curl -i https://chewbacca-growl.com/api/list | sed -n '1,30p'
+
+Expected:
+    Cache-Control: private, no-store
+    No meaningful cache hit behavior (Age not growing / no Hit)
+    Each request should reflect origin state
+If a student gets a cache HIT here, it’s a fail (potential data leak).
+
+Honors “Make them sweat” incident challenge
+  Failure Injection: “Origin forgot Cache-Control”
+      Remove Cache-Control from /api/public-feed
+      With the managed origin-driven policy, CloudFront should default to not caching 
+      Students must observe:
+        no Hit from cloudfront
+        increased origin load
+      Fix: restore proper Cache-Control
+  
+  Failure Injection: “Cache fragmentation”
+      Forward User-Agent / all headers into cache key (bad)
+      Hit ratio tanks
+      Fix: whitelist headers; CloudFront warns about forwarding unnecessary headers hurting hit ratio
+
+Student submission checklist (Honors)
+Students submit:
+1) Terraform diff showing:
+    use of UseOriginCacheControlHeaders managed cache policy 
+
+2) curl -i evidence showing:
+    Cache-Control present
+    x-cache transitions (Miss → Hit → Miss) 
+
+3) One paragraph answering:
+    Why origin-driven caching is safer for APIs
+    When you would still disable caching entirely
+
+
+
+
+

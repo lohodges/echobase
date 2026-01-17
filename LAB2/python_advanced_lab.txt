@@ -1,0 +1,62 @@
+Darth Malgus gets his own Ops CLI: YOU!  One file. Multiple subcommands. Real-world outputs. Minimal dependencies.
+
+Below is a single tool your students can ship as a portfolio artifact:
+triage → CloudWatch alarms
+insights → run Logs Insights queries (WAF/app)
+cf-probe → CloudFront cache correctness (x-cache, age)
+cloak-test → proves origin cloaking (CF works, ALB direct fails)
+drift → compares SSM vs Secrets (no password leakage)
+bedrock-report → generates a report from an evidence JSON bundle
+invalidate → controlled CloudFront invalidations
+
+    --> malgus_cli.py (single-file ops toolkit)
+
+How You run it
+Install deps
+
+    python3 -m venv .venv
+    source .venv/bin/activate
+    pip install boto3 requests
+
+Example commands (real lab use)
+Alarm triage
+
+python malgus_cli.py triage --state ALARM
+
+Run the WAF “ALLOW vs BLOCK” query
+
+python malgus_cli.py insights \
+  --log-group "aws-waf-logs-chewbacca-webacl01" \
+  --minutes 15 \
+  --query 'fields @timestamp, action | stats count() as hits by action | sort hits desc'
+
+Cache correctness probe
+
+    python malgus_cli.py cf-probe https://chewbacca-growl.com/api/public-feed --rounds 5 --delay 3
+
+Generate a Bedrock report from saved evidence
+
+    python malgus_cli.py bedrock-report \
+      --model-id <BEDROCK_MODEL_ID> \
+      --evidence-json evidence.json \
+      --out report.md
+
+Controlled invalidation
+
+    python malgus_cli.py invalidate \
+      --distribution-id <DIST_ID> \
+      --paths "/static/index.html" \
+      --wait
+
+
+Deliverables:
+
+1) The malgus_cli.py file
+2) A terminal transcript showing:
+    triage
+    one insights query
+    cloak-test
+    cf-probe
+A 6–10 line “interview talk track” about why it matters
+
+

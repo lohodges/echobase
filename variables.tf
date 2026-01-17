@@ -86,3 +86,17 @@ variable "sns_email_endpoint" {
   type        = string
   default     = "lonnie@robustci.com" # TODO: student supplies
 }
+
+# added by Lonnie Hodges 2026-01-17
+variable "domain_name" {
+  description = "aliases for passportog.com"
+  type        = string
+  default     = "passportog.com"
+}
+
+variable "app_subdomain" {
+  description = "aliases for app.passportog.com"
+  type        = string
+  default     = "app.passportog.com"
+}
+# ^^^ added by Lonnie Hodges 2026-01-17

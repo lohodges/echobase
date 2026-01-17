@@ -1,0 +1,16 @@
+Incident-style Failure Injection (very fun)  Only for Sith Lords
+
+Pick one per victim:
+Failure A: “User A sees User B’s data”
+  Cause: API caching enabled but cache key excludes Authorization/session cookie
+  Fix: Disable caching OR include auth identity in cache key (often: don’t cache personalized API)
+
+Failure B: “Random 403 after enabling ‘forward all headers’”
+  Cause: Over-forwarding/over-caching headers (policy mismatch)
+  Fix: Whitelist only needed headers; reduce cache key entropy
+
+(CloudFront docs emphasize controlling what’s in cache key and origin requests separately.) 
+
+Failure C: “Cache hit ratio tanked”
+  Cause: Too many headers/cookies/query strings in cache key (cache fragmentation)
+  Fix: Move values out of cache key (keep only what truly varies the response)

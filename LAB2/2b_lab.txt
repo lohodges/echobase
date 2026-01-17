@@ -1,0 +1,66 @@
+
+Lab 2B: CloudFront + API caching correctness
+Project Summary
+You will configure CloudFront behaviors so that:
+    Static content is cached aggressively (fast + cheap)
+    API responses are cached only when safe, or not cached at all
+    The cache key includes the minimum needed values (to avoid cache fragmentation), 
+      but includes all required values (to avoid serving the wrong response)
+    You can prove correctness using response headers like Age and CloudFront cache indicators, plus application-level evidence
+
+Why it matters to the workforce
+This lab is a direct mirror of production:
+  Most outages around CDNs aren’t “CloudFront is down.”
+  They are misconfigured caching:
+    auth/session mixups (catastrophic)
+    stale reads after writes
+    “works in dev, breaks in prod” because headers/cookies/query strings weren’t forwarded
+
+Modern orgs expect engineers to understand:
+    cache key composition 
+    how cache + origin request policies interact 
+    cache-control semantics (prefer Cache-Control over Expires)
+
+
+Terraform Overlay: lab2b_cache_correctness.tf
+    This assumes you already have aws_cloudfront_distribution.chewbacca_cf01 from Lab 2.
+
+1) Cache policy for static content (aggressive)
+# lab2b_cache_correctness.tf
+AWS warns that caching based on “high-cardinality headers” (like User-Agent) is usually a bad idea because it explodes variations.
+
+
+2) Cache policy for API (safe default: caching disabled)
+# lab2b_cache_correctness.tf
+
+3) Origin request policy for API (forward what origin needs)
+# lab2b_cache_correctness.tf
+Terraform’s resource matches this concept directly. 
+
+
+4) Origin request policy for static (minimal)
+# lab2b_cache_correctness.tf
+
+5) Response headers policy (optional but nice)
+    Terraform supports response header policies. 
+    CloudFront recommends using Cache-Control max-age over Expires.
+# lab2b_cache_correctness.tf
+
+6) Patch your CloudFront distribution behaviors
+    You’ll modify aws_cloudfront_distribution.chewbacca_cf01:
+
+A) Default behavior (treat as API-safe default)
+    Use chewbacca_cache_api_disabled01
+    Use chewbacca_orp_api01
+
+B) Ordered behavior for /static/*
+    Use chewbacca_cache_static01
+    Use chewbacca_orp_static01
+    Attach response headers policy
+
+Example snippet (students merge into the distribution):
+# lab2b_cache_correctness.tf
+
+
+
+

@@ -339,6 +339,8 @@ resource "aws_instance" "echobase_ec201" {
   }
 }
 
+
+
 # added by Lonnie Hodges 2026-01-16
 resource "aws_key_pair" "linux" {
   public_key      = file("${path.module}/id_aws_ec2_ed25519.pub")
