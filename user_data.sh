@@ -113,8 +113,6 @@ WorkingDirectory=/opt/rdsapp
 Environment=SECRET_ID=echobase/rds/mysql
 ExecStart=/usr/bin/python3 /opt/rdsapp/app.py
 Restart=always
-StandardOutput=append:/var/log/rdsapp/stdout.log
-StandardError=append:/var/log/rdsapp/stderr.log
 
 [Install]
 WantedBy=multi-user.target
