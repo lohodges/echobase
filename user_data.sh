@@ -3,14 +3,6 @@ dnf update -y
 dnf install -y python3-pip
 pip3 install flask pymysql boto3
 
-# added by Lonnie Hodges 2026-01-16
-# install Cloudwatch Agent
-sudo yum install -y selinux-policy-devel policycoreutils-devel rpm-build git
-mkdir -p /opt/cwagent
-wget -P /opt/cwagent "https://amazoncloudwatch-agent.s3.amazonaws.com/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm"
-sudo rpm -U /opt/cwagent/amazon-cloudwatch-agent.rpm
-# ^^^ added by Lonnie Hodges 2026-01-16
-
 mkdir -p /opt/rdsapp
 cat >/opt/rdsapp/app.py <<'PY'
 import json
