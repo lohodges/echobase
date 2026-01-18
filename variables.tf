@@ -98,7 +98,7 @@ variable "sns_email_endpoint" {
 # variable "app_subdomain" {
 #   description = "aliases for app.passportog.com"
 #   type        = string
-#   default     = "app.passportog.com"
+#   default     = "app"
 # }
 
 variable "domain_name" {
@@ -110,7 +110,7 @@ variable "domain_name" {
 variable "app_subdomain" {
   description = "aliases for app.echobase.click"
   type        = string
-  default     = "app.echobase.click"
+  default     = "app"
 }
 
 variable "certificate_validation_method" {
