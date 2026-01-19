@@ -89,16 +89,28 @@ variable "sns_email_endpoint" {
 
 # added by Lonnie Hodges 2026-01-17
 # copied from 1c_bonus_variables.tf
+# variable "domain_name" {
+#   description = "aliases for passportog.com"
+#   type        = string
+#   default     = "passportog.com"
+# }
+
+# variable "app_subdomain" {
+#   description = "aliases for app.passportog.com"
+#   type        = string
+#   default     = "app"
+# }
+
 variable "domain_name" {
-  description = "aliases for passportog.com"
+  description = "aliases for echobase.click"
   type        = string
-  default     = "passportog.com"
+  default     = "echobase.click"
 }
 
 variable "app_subdomain" {
-  description = "aliases for app.passportog.com"
+  description = "aliases for app.echobase.click"
   type        = string
-  default     = "app.passportog.com"
+  default     = "app"
 }
 
 variable "certificate_validation_method" {

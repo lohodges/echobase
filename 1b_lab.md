@@ -79,35 +79,34 @@ Expected:
 From EC2:
 
     aws ssm get-parameter --name /lab/db/endpoint
-    aws secretsmanager get-secret-value --secret-id lab/rds/mysql
+    aws secretsmanager get-secret-value --secret-id echobase/rds/mysql
 
 Expected:
   Both commands succeed
   No AccessDeniedException
 ```
-1c_terrraform/python main ? ❯ aws ssm get-parameter --name /lab/db/endpoint
+1c_terrraform lhj-keepItSimple  ❯ aws ssm get-parameter --name /lab/db/endpoint
+    aws secretsmanager get-secret-value --secret-id echobase/rds/mysql
 {
     "Parameter": {
         "Name": "/lab/db/endpoint",
         "Type": "String",
         "Value": "echobase-rds01.cxo22gqsc8z4.us-east-2.rds.amazonaws.com",
         "Version": 1,
-        "LastModifiedDate": "2026-01-14T18:04:24.719000-05:00",
+        "LastModifiedDate": "2026-01-18T15:03:52.798000-05:00",
         "ARN": "arn:aws:ssm:us-east-2:746669200167:parameter/lab/db/endpoint",
         "DataType": "text"
     }
 }
-
-1c_terrraform/python main ? ❯ aws secretsmanager get-secret-value --secret-id lab/rds/mysql
 {
-    "ARN": "arn:aws:secretsmanager:us-east-2:746669200167:secret:lab/rds/mysql-VxRjeA",
-    "Name": "lab/rds/mysql",
-    "VersionId": "276e03b4-480e-4623-9323-62b630fc3857",
-    "SecretString": "{\"username\":\"admin\",\"password\":\"<PASSWORD REMOVED>\",\"engine\":\"mysql\",\"host\":\"lab-mysql.cxo22gqsc8z4.us-east-2.rds.amazonaws.com\",\"port\":3306,\"dbInstanceIdentifier\":\"lab-mysql\"}",
+    "ARN": "arn:aws:secretsmanager:us-east-2:746669200167:secret:echobase/rds/mysql-zZrbw7",
+    "Name": "echobase/rds/mysql",
+    "VersionId": "de712a83-5905-4a8a-94c2-094997383c60",
+    "SecretString": "{\"dbname\":\"notesappdb\",\"host\":\"echobase-rds01.cxo22gqsc8z4.us-east-2.rds.amazonaws.com\",\"password\":\"<PASSWORD-REMOVED>\",\"port\":3306,\"username\":\"admin\"}",
     "VersionStages": [
         "AWSCURRENT"
     ],
-    "CreatedDate": "2026-01-10T07:20:32.007000-05:00"
+    "CreatedDate": "2026-01-18T15:24:40.510000-05:00"
 }
 ```
   
@@ -119,13 +118,13 @@ Expected:
 Expected:
   Log group present
 ```
-1c_terrraform main  ✗ aws logs describe-log-groups \
+1c_terrraform lhj-keepItSimple  ❯ aws logs describe-log-groups \
       --log-group-name-prefix /aws/ec2/echobase-rds-app
 {
     "logGroups": [
         {
             "logGroupName": "/aws/ec2/echobase-rds-app",
-            "creationTime": 1768515272605,
+            "creationTime": 1768766257979,
             "retentionInDays": 7,
             "metricFilterCount": 0,
             "arn": "arn:aws:logs:us-east-2:746669200167:log-group:/aws/ec2/echobase-rds-app:*",

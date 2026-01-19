@@ -3,26 +3,36 @@ dnf update -y
 dnf install -y python3-pip
 pip3 install flask pymysql boto3
 
-# added by Lonnie Hodges 2026-01-16
-# install Cloudwatch Agent
-sudo yum install -y selinux-policy-devel policycoreutils-devel rpm-build git
-mkdir -p /opt/cwagent
-wget -P /opt/cwagent "https://amazoncloudwatch-agent.s3.amazonaws.com/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm"
-sudo rpm -U /opt/cwagent/amazon-cloudwatch-agent.rpm
-# ^^^ added by Lonnie Hodges 2026-01-16
-
 mkdir -p /opt/rdsapp
 cat >/opt/rdsapp/app.py <<'PY'
 import json
 import os
 import boto3
 import pymysql
+import time
 from flask import Flask, request
 
 REGION = os.environ.get("AWS_REGION", "us-east-2")
 SECRET_ID = os.environ.get("SECRET_ID", "echobase/rds/mysql")
 
+LOG_GROUP = "/aws/ec2/echobase-rds-app"
+LOG_STREAM = "echobase-rds-app"
+
 secrets = boto3.client("secretsmanager", region_name=REGION)
+logs_client = boto3.client("logs", region_name=REGION)
+
+def log_to_cloudwatch(message):                                                                                                                                                                                                                                  
+    try:                                                                                                                                                                                                                                                         
+        logs_client.put_log_events(                                                                                                                                                                                                                              
+            logGroupName=LOG_GROUP,                                                                                                                                                                                                                              
+            logStreamName=LOG_STREAM,                                                                                                                                                                                                                            
+            logEvents=[{                                                                                                                                                                                                                                         
+                'timestamp': int(time.time() * 1000),                                                                                                                                                                                                            
+                'message': message                                                                                                                                                                                                                               
+            }]                                                                                                                                                                                                                                                   
+        )                                                                                                                                                                                                                                                        
+    except Exception as e:                                                                                                                                                                                                                                       
+        print(f"Failed to log to CloudWatch: {e}")
 
 def get_db_creds():
     resp = secrets.get_secret_value(SecretId=SECRET_ID)
@@ -31,14 +41,18 @@ def get_db_creds():
     # username, password, host, port, dbname (sometimes)
     return s
 
-def get_conn():
-    c = get_db_creds()
-    host = c["host"]
-    user = c["username"]
-    password = c["password"]
-    port = int(c.get("port", 3306))
-    db = c.get("dbname", "notesappdb")  # we'll create this if it doesn't exist
-    return pymysql.connect(host=host, user=user, password=password, port=port, database=db, autocommit=True)
+def get_conn():                                                                                                                                                                                                                                                  
+    try:                                                                                                                                                                                                                                                         
+        c = get_db_creds()                                                                                                                                                                                                                                       
+        host = c["host"]                                                                                                                                                                                                                                         
+        user = c["username"]                                                                                                                                                                                                                                     
+        password = c["password"]                                                                                                                                                                                                                                 
+        port = int(c.get("port", 3306))                                                                                                                                                                                                                          
+        db = c.get("dbname", "notesappdb")                                                                                                                                                                                                                       
+        return pymysql.connect(host=host, user=user, password=password, port=port, database=db, autocommit=True)                                                                                                                                                 
+    except Exception as e:                                                                                                                                                                                                                                       
+        log_to_cloudwatch(f"ERROR: DB connection failed - {e}")                                                                                                                                                                                                  
+        raise
 
 app = Flask(__name__)
 
