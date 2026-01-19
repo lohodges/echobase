@@ -3,8 +3,10 @@
 ############################################
 locals {
   name_prefix = var.project_name
+
+  # TODO: Students should lock this down after apply using the real secret ARN from outputs/state
+  echobase_secret_arn_guess = "arn:aws:secretsmanager:${data.aws_region.echobase_region01.region}:${data.aws_caller_identity.echobase_self01.account_id}:secret:${local.name_prefix}/rds/mysql*"
 }
-#---> added by Dusty Trell on 2026-01-18
 
 # added by Lonnie Hodges on 2026-01-17
 ############################################
@@ -16,14 +18,6 @@ data "aws_caller_identity" "echobase_self01" {}
 
 # Explanation: Region matters—hyperspace lanes change per sector.
 data "aws_region" "echobase_region01" {}
-
-locals {
-  # Explanation: Name prefix is the roar that echoes through every tag.
-  echobase_prefix = var.project_name
-
-  # TODO: Students should lock this down after apply using the real secret ARN from outputs/state
-  echobase_secret_arn_guess = "arn:aws:secretsmanager:${data.aws_region.echobase_region01.name}:${data.aws_caller_identity.echobase_self01.account_id}:secret:${local.echobase_prefix}/rds/mysql*"
-}
 # ^^^ added by Lonnie Hodges on 2026-01-17
 
 
@@ -175,28 +169,18 @@ resource "aws_security_group" "echobase_ec2_sg01" {
 resource "aws_vpc_security_group_ingress_rule" "http" {
   security_group_id = aws_security_group.echobase_ec2_sg01.id
   cidr_ipv4         = "0.0.0.0/0"
-  from_port         = 80
   ip_protocol       = "tcp"
+  from_port         = 80
   to_port           = 80
 }
-
-# TO BE DELETED LATER
-# resource "aws_vpc_security_group_ingress_rule" "ssh" {
-#   security_group_id = aws_security_group.echobase_ec2_sg01.id
-#   cidr_ipv4         = "0.0.0.0/0"
-#   from_port         = 22
-#   ip_protocol       = "tcp"
-#   to_port           = 22
-# }
 
 # TODO: student ensures outbound allows DB port to RDS SG (or allow all outbound)
 # added by Lonnie Hodges
 resource "aws_vpc_security_group_egress_rule" "out_to_rds" {
-  security_group_id = aws_security_group.echobase_ec2_sg01.id
-  #cidr_ipv4         = "0.0.0.0/0"
+  security_group_id            = aws_security_group.echobase_ec2_sg01.id
   referenced_security_group_id = aws_security_group.echobase_rds_sg01.id
-  from_port                    = 3306
   ip_protocol                  = "tcp"
+  from_port                    = 3306
   to_port                      = 3306
 }
 
@@ -222,10 +206,39 @@ resource "aws_security_group" "echobase_rds_sg01" {
 resource "aws_vpc_security_group_ingress_rule" "from_ec2" {
   security_group_id            = aws_security_group.echobase_rds_sg01.id
   referenced_security_group_id = aws_security_group.echobase_ec2_sg01.id
-  from_port                    = 3306
   ip_protocol                  = "tcp"
+  from_port                    = 3306
   to_port                      = 3306
 }
+
+# added by Lonnie Hodges on 2026-01-19
+############################################
+# Security Group for VPC Interface Endpoints
+############################################
+
+# Explanation: Even endpoints need guards—Echobase posts a Wookiee at every airlock.
+resource "aws_security_group" "echobase_vpce_sg01" {
+  name        = "${local.name_prefix}-vpce-sg01"
+  description = "SG for VPC Interface Endpoints"
+  vpc_id      = aws_vpc.echobase_vpc01.id
+
+  # NOTE: Interface endpoints ENIs receive traffic on 443.
+
+  tags = {
+    Name = "${local.name_prefix}-vpce-sg01"
+  }
+}
+
+# bonus_a.tf TODO: Students must allow inbound 443 FROM the EC2 SG (or VPC CIDR) to endpoints.
+# https://docs.aws.amazon.com/vpc/latest/privatelink/create-interface-endpoint.html
+resource "aws_vpc_security_group_ingress_rule" "https_from_ec2_sg01" {
+  security_group_id            = aws_security_group.echobase_vpce_sg01.id
+  referenced_security_group_id = aws_security_group.echobase_ec2_sg01.id
+  ip_protocol                  = "tcp"
+  from_port                    = 443
+  to_port                      = 443
+}
+# ^^^ added by Lonnie Hodges on 2026-01-19
 
 ############################################
 # RDS Subnet Group
@@ -265,9 +278,6 @@ resource "aws_db_instance" "echobase_rds01" {
   enabled_cloudwatch_logs_exports = ["audit", "error", "general", "slowquery", "iam-db-auth-error"]
 
   # TODO: student sets multi_az / backups / monitoring as stretch goals
-  # added by Lonnie Hodges: to add later
-
-
 
   tags = {
     Name = "${local.name_prefix}-rds01"
@@ -323,10 +333,7 @@ resource "aws_iam_role_policy_attachment" "echobase_ec2_ssm_attach" {
 
 # Explanation: EC2 must read secrets/params during recovery—give it access (students should scope it down).
 resource "aws_iam_role_policy_attachment" "echobase_ec2_secrets_attach" {
-  role = aws_iam_role.echobase_ec2_role01.name
-  # added by Lonnie Hodges
-  #policy_arn = aws_iam_policy.policy_ec2_read_secret.arn
-  # commented out line below by Lonnie Hodges
+  role       = aws_iam_role.echobase_ec2_role01.name
   policy_arn = "arn:aws:iam::aws:policy/SecretsManagerReadWrite" # TODO: student replaces w/ least privilege
 }
 
@@ -357,23 +364,11 @@ resource "aws_instance" "echobase_ec201" {
   # TODO: student supplies user_data to install app + CW agent + configure log shipping
   # added by Lonnie Hodges
   user_data = file("${path.module}/user_data.sh")
-  key_name  = aws_key_pair.linux.key_name
 
   tags = {
     Name = "${local.name_prefix}-ec201"
   }
 }
-
-# added by Lonnie Hodges 2026-01-16
-resource "aws_key_pair" "linux" {
-  public_key      = file("${path.module}/id_aws_ec2_ed25519.pub")
-  key_name_prefix = "echobase-"
-
-  tags = {
-    Name = "${local.name_prefix}-ec201-keypair"
-  }
-}
-# ^^^ added by Lonnie Hodges 2026-01-16
 
 # added by Lonnie Hodges on 2026-01-17
 # from bonus_a.tf
@@ -391,9 +386,10 @@ resource "aws_instance" "echobase_ec201_private_bonus" {
 
   # TODO: Students should remove/disable SSH inbound rules entirely and rely on SSM.
   # TODO: Students add user_data that installs app + CW agent; for true hard mode use a baked AMI.
+  user_data = file("${path.module}/user_data.sh")
 
   tags = {
-    Name = "${local.echobase_prefix}-ec201-private"
+    Name = "${local.name_prefix}-ec201-private"
   }
 }
 
@@ -526,3 +522,138 @@ resource "aws_sns_topic_subscription" "echobase_sns_sub01" {
 # Explanation: Endpoints keep traffic inside AWS like hyperspace lanes—less exposure, more control.
 # TODO: students can add endpoints for SSM, Logs, Secrets Manager if doing “no public egress” variant.
 # resource "aws_vpc_endpoint" "echobase_vpce_ssm" { ... }
+
+# added by Lonnie Hodges on 2026-01-19
+############################################
+# VPC Endpoint - S3 (Gateway)
+############################################
+
+# Explanation: S3 is the supply depot—without this, your private world starves (updates, artifacts, logs).
+resource "aws_vpc_endpoint" "echobase_vpce_s3_gw01" {
+  vpc_id            = aws_vpc.echobase_vpc01.id
+  service_name      = "com.amazonaws.${data.aws_region.echobase_region01.region}.s3"
+  vpc_endpoint_type = "Gateway"
+
+  route_table_ids = [
+    aws_route_table.echobase_private_rt01.id
+  ]
+
+  tags = {
+    Name = "${local.name_prefix}-vpce-s3-gw01"
+  }
+}
+# ^^^ added by Lonnie Hodges on 2026-01-19
+
+# added by Lonnie Hodges on 2026-01-19
+############################################
+# VPC Endpoints - SSM (Interface)
+############################################
+
+# Explanation: SSM is your Force choke—remote control without SSH, and nobody sees your keys.
+resource "aws_vpc_endpoint" "echobase_vpce_ssm01" {
+  vpc_id              = aws_vpc.echobase_vpc01.id
+  service_name        = "com.amazonaws.${data.aws_region.echobase_region01.region}.ssm"
+  vpc_endpoint_type   = "Interface"
+  private_dns_enabled = true
+
+  subnet_ids         = aws_subnet.echobase_private_subnets[*].id
+  security_group_ids = [aws_security_group.echobase_vpce_sg01.id]
+
+  tags = {
+    Name = "${local.name_prefix}-vpce-ssm01"
+  }
+}
+
+# Explanation: ec2messages is the Wookiee messenger—SSM sessions won’t work without it.
+resource "aws_vpc_endpoint" "echobase_vpce_ec2messages01" {
+  vpc_id              = aws_vpc.echobase_vpc01.id
+  service_name        = "com.amazonaws.${data.aws_region.echobase_region01.region}.ec2messages"
+  vpc_endpoint_type   = "Interface"
+  private_dns_enabled = true
+
+  subnet_ids         = aws_subnet.echobase_private_subnets[*].id
+  security_group_ids = [aws_security_group.echobase_vpce_sg01.id]
+
+  tags = {
+    Name = "${local.name_prefix}-vpce-ec2messages01"
+  }
+}
+
+# Explanation: ssmmessages is the holonet channel—Session Manager needs it to talk back.
+resource "aws_vpc_endpoint" "echobase_vpce_ssmmessages01" {
+  vpc_id              = aws_vpc.echobase_vpc01.id
+  service_name        = "com.amazonaws.${data.aws_region.echobase_region01.region}.ssmmessages"
+  vpc_endpoint_type   = "Interface"
+  private_dns_enabled = true
+
+  subnet_ids         = aws_subnet.echobase_private_subnets[*].id
+  security_group_ids = [aws_security_group.echobase_vpce_sg01.id]
+
+  tags = {
+    Name = "${local.name_prefix}-vpce-ssmmessages01"
+  }
+}
+# ^^^ added by Lonnie Hodges on 2026-01-19
+
+# added by Lonnie Hodges on 2026-01-19
+############################################
+# VPC Endpoint - CloudWatch Logs (Interface)
+############################################
+
+# Explanation: CloudWatch Logs is the ship’s black box—echobase wants crash data, always.
+resource "aws_vpc_endpoint" "echobase_vpce_logs01" {
+  vpc_id              = aws_vpc.echobase_vpc01.id
+  service_name        = "com.amazonaws.${data.aws_region.echobase_region01.region}.logs"
+  vpc_endpoint_type   = "Interface"
+  private_dns_enabled = true
+
+  subnet_ids         = aws_subnet.echobase_private_subnets[*].id
+  security_group_ids = [aws_security_group.echobase_vpce_sg01.id]
+
+  tags = {
+    Name = "${local.name_prefix}-vpce-logs01"
+  }
+}
+# ^^^ added by Lonnie Hodges on 2026-01-19
+
+# added by Lonnie Hodges on 2026-01-19
+############################################
+# VPC Endpoint - Secrets Manager (Interface)
+############################################
+
+# Explanation: Secrets Manager is the locked vault—echobase doesn’t put passwords on sticky notes.
+resource "aws_vpc_endpoint" "echobase_vpce_secrets01" {
+  vpc_id              = aws_vpc.echobase_vpc01.id
+  service_name        = "com.amazonaws.${data.aws_region.echobase_region01.region}.secretsmanager"
+  vpc_endpoint_type   = "Interface"
+  private_dns_enabled = true
+
+  subnet_ids         = aws_subnet.echobase_private_subnets[*].id
+  security_group_ids = [aws_security_group.echobase_vpce_sg01.id]
+
+  tags = {
+    Name = "${local.name_prefix}-vpce-secrets01"
+  }
+}
+# ^^^ added by Lonnie Hodges on 2026-01-19
+
+# added by Lonnie Hodges on 2026-01-19
+############################################
+# Optional: VPC Endpoint - KMS (Interface)
+############################################
+
+# Explanation: KMS is the encryption kyber crystal—echobase prefers locked doors AND locked safes.
+resource "aws_vpc_endpoint" "echobase_vpce_kms01" {
+  vpc_id              = aws_vpc.echobase_vpc01.id
+  service_name        = "com.amazonaws.${data.aws_region.echobase_region01.region}.kms"
+  vpc_endpoint_type   = "Interface"
+  private_dns_enabled = true
+
+  subnet_ids         = aws_subnet.echobase_private_subnets[*].id
+  security_group_ids = [aws_security_group.echobase_vpce_sg01.id]
+
+  tags = {
+    Name = "${local.name_prefix}-vpce-kms01"
+  }
+}
+# ^^^ added by Lonnie Hodges on 2026-01-19

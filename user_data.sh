@@ -135,3 +135,53 @@ SERVICE
 systemctl daemon-reload
 systemctl enable rdsapp
 systemctl start rdsapp
+
+# added by Lonnie Hodges 2026-01-16
+# install Cloudwatch Agent
+sudo yum install -y selinux-policy-devel policycoreutils-devel rpm-build git
+mkdir -p /opt/cwagent
+wget -P /opt/cwagent "https://amazoncloudwatch-agent.s3.amazonaws.com/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm"
+sudo rpm -U /opt/cwagent/amazon-cloudwatch-agent.rpm
+
+# Create CloudWatch Agent config
+cat >/opt/aws/amazon-cloudwatch-agent/bin/config.json <<'CWCONFIG'
+{
+"agent": {
+    "metrics_collection_interval": 600,
+    "run_as_user": "root"
+},
+"metrics": {
+        "namespace": "CWAgent",
+        "metrics_collected": {
+            "cpu": {
+                "measurement": ["cpu_usage_idle", "cpu_usage_user", "cpu_usage_system"],
+                "metrics_collection_interval": 600,
+                "totalcpu": true
+            },
+            "disk": {
+                "measurement": ["used_percent", "inodes_free"],
+                "metrics_collection_interval": 600,
+                "resources": ["*"]
+            },
+            "diskio": {
+                "measurement": ["io_time", "read_bytes", "write_bytes"],
+                "metrics_collection_interval": 600,
+                "resources": ["*"]
+            },
+            "mem": {
+                "measurement": ["mem_used_percent"],
+                "metrics_collection_interval": 600
+            },
+            "swap": {
+                "measurement": ["swap_used_percent"],
+                "metrics_collection_interval": 600
+            }
+        }
+    }
+}
+CWCONFIG
+
+sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -c file:/opt/aws/amazon-cloudwatch-agent/bin/config.json -s
+sudo systemctl enable amazon-cloudwatch-agent
+sudo systemctl start amazon-cloudwatch-agent
+# ^^^ added by Lonnie Hodges 2026-01-16
