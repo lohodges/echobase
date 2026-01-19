@@ -40,6 +40,8 @@ Expected: list includes:
   logs 
   secretsmanager
   s3
+
+  
 ```
 1c_terrraform lhj-keepItSimple  ? ❯ aws ec2 describe-vpc-endpoints \
   --filters "Name=vpc-id,Values=vpc-0dd49728f2b31ee35" \

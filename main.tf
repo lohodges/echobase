@@ -331,11 +331,13 @@ resource "aws_iam_role_policy_attachment" "echobase_ec2_ssm_attach" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
 }
 
-# Explanation: EC2 must read secrets/params during recovery—give it access (students should scope it down).
-resource "aws_iam_role_policy_attachment" "echobase_ec2_secrets_attach" {
-  role       = aws_iam_role.echobase_ec2_role01.name
-  policy_arn = "arn:aws:iam::aws:policy/SecretsManagerReadWrite" # TODO: student replaces w/ least privilege
-}
+# added by Lonnie Hodges on 2026-01-19
+# COMMENTED OUT to use least privilege 
+# # Explanation: EC2 must read secrets/params during recovery—give it access (students should scope it down).
+# resource "aws_iam_role_policy_attachment" "echobase_ec2_secrets_attach" {
+#   role       = aws_iam_role.echobase_ec2_role01.name
+#   policy_arn = "arn:aws:iam::aws:policy/SecretsManagerReadWrite" # TODO: student replaces w/ least privilege
+# }
 
 # Explanation: CloudWatch logs are the “ship’s black box”—you need them when things explode.
 resource "aws_iam_role_policy_attachment" "echobase_ec2_cw_attach" {
@@ -348,6 +350,98 @@ resource "aws_iam_instance_profile" "echobase_instance_profile01" {
   name = "${local.name_prefix}-instance-profile01"
   role = aws_iam_role.echobase_ec2_role01.name
 }
+
+# added by Lonnie Hodges on 2026-01-19
+############################################
+# Least-Privilege IAM (BONUS A)
+############################################
+
+# Explanation: Echobase doesn’t hand out the Falcon keys—this policy scopes reads to your lab paths only.
+resource "aws_iam_policy" "echobase_leastpriv_read_params01" {
+  name        = "${local.name_prefix}-lp-ssm-read01"
+  description = "Least-privilege read for SSM Parameter Store under /lab/db/*"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "ReadLabDbParams"
+        Effect = "Allow"
+        Action = [
+          "ssm:GetParameter",
+          "ssm:GetParameters",
+          "ssm:GetParametersByPath"
+        ]
+        Resource = [
+          "arn:aws:ssm:${data.aws_region.echobase_region01.region}:${data.aws_caller_identity.echobase_self01.account_id}:parameter/lab/db/*"
+        ]
+      }
+    ]
+  })
+}
+
+# Explanation: echobase only opens *this* vault—GetSecretValue for only your secret (not the whole planet).
+resource "aws_iam_policy" "echobase_leastpriv_read_secret01" {
+  name        = "${local.name_prefix}-lp-secrets-read01"
+  description = "Least-privilege read for the lab DB secret"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "ReadOnlyLabSecret"
+        Effect = "Allow"
+        Action = [
+          "secretsmanager:GetSecretValue",
+          "secretsmanager:DescribeSecret"
+        ]
+        Resource = local.echobase_secret_arn_guess
+      }
+    ]
+  })
+}
+
+# Explanation: When the Falcon logs scream, this lets echobase ship logs to CloudWatch without giving away the Death Star plans.
+resource "aws_iam_policy" "echobase_leastpriv_cwlogs01" {
+  name        = "${local.name_prefix}-lp-cwlogs01"
+  description = "Least-privilege CloudWatch Logs write for the app log group"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "WriteLogs"
+        Effect = "Allow"
+        Action = [
+          "logs:CreateLogStream",
+          "logs:PutLogEvents",
+          "logs:DescribeLogStreams"
+        ]
+        Resource = [
+          "${aws_cloudwatch_log_group.echobase_log_group01.arn}:*"
+        ]
+      }
+    ]
+  })
+}
+
+# Explanation: Attach the scoped policies—echobase loves power, but only the safe kind.
+resource "aws_iam_role_policy_attachment" "echobase_attach_lp_params01" {
+  role       = aws_iam_role.echobase_ec2_role01.name
+  policy_arn = aws_iam_policy.echobase_leastpriv_read_params01.arn
+}
+
+resource "aws_iam_role_policy_attachment" "echobase_attach_lp_secret01" {
+  role       = aws_iam_role.echobase_ec2_role01.name
+  policy_arn = aws_iam_policy.echobase_leastpriv_read_secret01.arn
+}
+
+resource "aws_iam_role_policy_attachment" "echobase_attach_lp_cwlogs01" {
+  role       = aws_iam_role.echobase_ec2_role01.name
+  policy_arn = aws_iam_policy.echobase_leastpriv_cwlogs01.arn
+}
+# ^^^ added by Lonnie Hodges on 2026-01-19
+
 
 ############################################
 # EC2 Instance (App Host)
