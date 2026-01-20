@@ -143,3 +143,15 @@ variable "alb_5xx_evaluation_periods" {
   default     = 1
 }
 # ^^^ added by Lonnie Hodges 2026-01-17
+
+variable "manage_route53_in_terraform" {
+  description = "If true, create/manage Route53 hosted zone + records in Terraform."
+  type        = bool
+  default     = true
+}
+
+variable "route53_hosted_zone_id" {
+  description = "If manage_route53_in_terraform=false, provide existing Hosted Zone ID for domain."
+  type        = string
+  default     = ""
+}

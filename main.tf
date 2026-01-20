@@ -6,6 +6,18 @@ locals {
 
   # TODO: Students should lock this down after apply using the real secret ARN from outputs/state
   echobase_secret_arn_guess = "arn:aws:secretsmanager:${data.aws_region.echobase_region01.region}:${data.aws_caller_identity.echobase_self01.account_id}:secret:${local.name_prefix}/rds/mysql*"
+
+  # Explanation: This is the roar address — where the galaxy finds your app.
+  echobase_fqdn = "${var.app_subdomain}.${var.domain_name}"
+
+  # Explanation: echobase needs a home planet—Route53 hosted zone is your DNS territory.
+  echobase_zone_name = var.domain_name
+
+  # Explanation: Use either Terraform-managed zone or a pre-existing zone ID (students choose their destiny).
+  echobase_zone_id = var.manage_route53_in_terraform #? aws_route53_zone.echobase_zone01[0].zone_id : var.route53_hosted_zone_id
+
+  # Explanation: This is the app address that will growl at the galaxy (app.echobase.click).
+  echobase_app_fqdn = "${var.app_subdomain}.${var.domain_name}"
 }
 
 # added by Lonnie Hodges on 2026-01-17
@@ -209,6 +221,28 @@ resource "aws_vpc_security_group_ingress_rule" "from_ec2" {
   ip_protocol                  = "tcp"
   from_port                    = 3306
   to_port                      = 3306
+}
+
+# Explanation: echobase only opens the hangar door — allow ALB -> EC2 on app port (e.g., 80).
+resource "aws_vpc_security_group_ingress_rule" "echobase_ec2_ingress_from_alb01" {
+  security_group_id            = aws_security_group.echobase_ec2_sg01.id
+  referenced_security_group_id = aws_security_group.echobase_alb_sg01.id
+  ip_protocol                  = "tcp"
+  from_port                    = 80
+  to_port                      = 80
+
+  # TODO: students ensure EC2 app listens on this port (or change to 8080, etc.)
+}
+
+# Explanation: echobase only opens the hangar door — allow ALB -> EC2 on app port (e.g., 443).
+resource "aws_vpc_security_group_ingress_rule" "echobase_tls_ec2_ingress_from_alb01" {
+  security_group_id            = aws_security_group.echobase_ec2_sg01.id
+  referenced_security_group_id = aws_security_group.echobase_alb_sg01.id
+  ip_protocol                  = "tcp"
+  from_port                    = 443
+  to_port                      = 443
+
+  # TODO: students ensure EC2 app listens on this port (or change to 8080, etc.)
 }
 
 # added by Lonnie Hodges on 2026-01-19
@@ -749,5 +783,235 @@ resource "aws_vpc_endpoint" "echobase_vpce_kms01" {
   tags = {
     Name = "${local.name_prefix}-vpce-kms01"
   }
+}
+# ^^^ added by Lonnie Hodges on 2026-01-19
+
+# added by Lonnie Hodges on 2026-01-19
+############################################
+# Security Group: ALB
+############################################
+
+# Explanation: The ALB SG is the blast shield — only allow what the Rebellion needs (80/443).
+resource "aws_security_group" "echobase_alb_sg01" {
+  name        = "${var.project_name}-alb-sg01"
+  description = "ALB security group"
+  vpc_id      = aws_vpc.echobase_vpc01.id
+
+  # TODO: students add inbound 80/443 from 0.0.0.0/0
+  # TODO: students set outbound to target group port (usually 80) to private targets
+
+  tags = {
+    Name = "${var.project_name}-alb-sg01"
+  }
+}
+
+# Explanation: echobase only opens the hangar door — allow ALB -> EC2 on app port (e.g., 80).
+resource "aws_vpc_security_group_ingress_rule" "echobase_ec2_ingress_from_internet" {
+  security_group_id = aws_security_group.echobase_alb_sg01.id
+  cidr_ipv4         = "0.0.0.0/0"
+  ip_protocol       = "tcp"
+  from_port         = 80
+  to_port           = 80
+
+  # TODO: students ensure EC2 app listens on this port (or change to 8080, etc.)
+}
+
+# Explanation: echobase only opens the hangar door — allow ALB -> EC2 on app port (e.g., 443).
+resource "aws_vpc_security_group_ingress_rule" "echobase_tls_ec2_ingress_from_internet" {
+  security_group_id = aws_security_group.echobase_alb_sg01.id
+  cidr_ipv4         = "0.0.0.0/0"
+  ip_protocol       = "tcp"
+  from_port         = 443
+  to_port           = 443
+
+  # TODO: students ensure EC2 app listens on this port (or change to 8080, etc.)
+}
+
+# Explanation: echobase only opens the hangar door — allow ALB -> EC2 on app port (e.g., 443).
+resource "aws_vpc_security_group_egress_rule" "echobase_egress_to_ec2" {
+  security_group_id = aws_security_group.echobase_alb_sg01.id
+  referenced_security_group_id = aws_security_group.echobase_ec2_sg01.id
+  ip_protocol       = "tcp"
+  from_port         = 80
+  to_port           = 80
+
+  # TODO: students ensure EC2 app listens on this port (or change to 8080, etc.)
+}
+
+# Explanation: echobase only opens the hangar door — allow ALB -> EC2 on app port (e.g., 443).
+resource "aws_vpc_security_group_egress_rule" "echobase_tls_egress_to_ec2" {
+  security_group_id = aws_security_group.echobase_alb_sg01.id
+  referenced_security_group_id = aws_security_group.echobase_ec2_sg01.id
+  ip_protocol       = "tcp"
+  from_port         = 443
+  to_port           = 443
+
+  # TODO: students ensure EC2 app listens on this port (or change to 8080, etc.)
+}
+
+
+############################################
+# Application Load Balancer
+############################################
+
+# Explanation: The ALB is your public customs checkpoint — it speaks TLS and forwards to private targets.
+resource "aws_lb" "echobase_alb01" {
+  name               = "${var.project_name}-alb01"
+  load_balancer_type = "application"
+  internal           = false
+
+  security_groups = [aws_security_group.echobase_alb_sg01.id]
+  subnets         = aws_subnet.echobase_public_subnets[*].id
+
+  # TODO: students can enable access logs to S3 as a stretch goal
+
+  tags = {
+    Name = "${var.project_name}-alb01"
+  }
+}
+
+############################################
+# Target Group + Attachment
+############################################
+
+# Explanation: Target groups are echobase’s “who do I forward to?” list — private EC2 lives here.
+resource "aws_lb_target_group" "echobase_tg01" {
+  name     = "${var.project_name}-tg01"
+  port     = 80
+  protocol = "HTTP"
+  vpc_id   = aws_vpc.echobase_vpc01.id
+
+  # TODO: students set health check path to something real (e.g., /health)
+  health_check {
+    enabled             = true
+    interval            = 30
+    path                = "/health"
+    port                = "traffic-port"
+    protocol            = "HTTP"
+    healthy_threshold   = 2
+    unhealthy_threshold = 2
+    timeout             = 5
+    matcher             = "200-399"
+  }
+
+  tags = {
+    Name = "${var.project_name}-tg01"
+  }
+}
+
+# Explanation: echobase personally introduces the ALB to the private EC2 — “this is my friend, don’t shoot.”
+resource "aws_lb_target_group_attachment" "echobase_tg_attach01" {
+  target_group_arn = aws_lb_target_group.echobase_tg01.arn
+  target_id        = aws_instance.echobase_ec201_private_bonus.id
+  port             = 80
+
+  # TODO: students ensure EC2 security group allows inbound from ALB SG on this port (rule above)
+}
+
+resource "aws_lb_target_group_attachment" "echobase_tg_attach02" {
+  target_group_arn = aws_lb_target_group.echobase_tg01.arn
+  target_id        = aws_instance.echobase_ec201.id
+  port             = 80
+
+  # TODO: students ensure EC2 security group allows inbound from ALB SG on this port (rule above)
+}
+
+############################################
+# ACM Certificate (TLS) for app.echobase.click
+############################################
+
+# Explanation: TLS is the diplomatic passport — browsers trust you, and echobase stops growling at plaintext.
+resource "aws_acm_certificate" "echobase_acm_cert01" {
+  domain_name       = local.echobase_fqdn
+  validation_method = var.certificate_validation_method
+
+  # TODO: students can add subject_alternative_names like var.domain_name if desired
+
+  tags = {
+    Name = "${var.project_name}-acm-cert01"
+  }
+}
+
+# Explanation: DNS validation records are the “prove you own the planet” ritual — Route53 makes this elegant.
+# TODO: students implement aws_route53_record(s) if they manage DNS in Route53.
+# resource "aws_route53_record" "echobase_acm_validation" { ... }
+
+resource "aws_route53_record" "app" {
+  zone_id = data.aws_route53_zone.echobase_click.zone_id
+  name    = "${var.app_subdomain}.${var.domain_name}"
+  type    = "A"
+
+  alias {
+    name                   = aws_lb.echobase_alb01.dns_name
+    zone_id                = aws_lb.echobase_alb01.zone_id
+    evaluate_target_health = true
+  }
+}
+
+data "aws_route53_zone" "echobase_click" {
+  zone_id = "Z0828030PI6PCZKRD9SW"
+  #name         = var.domain_name
+  #private_zone = false
+}
+
+resource "aws_route53_record" "echobase_acm_validation" {
+  for_each = {
+    for dvo in aws_acm_certificate.echobase_acm_cert01.domain_validation_options : dvo.domain_name => {
+      name   = dvo.resource_record_name
+      record = dvo.resource_record_value
+      type   = dvo.resource_record_type
+    }
+  }
+
+  allow_overwrite = true
+  name            = each.value.name
+  records         = [each.value.record]
+  ttl             = 60
+  type            = each.value.type
+  zone_id         = data.aws_route53_zone.echobase_click.zone_id
+}
+
+# Explanation: Once validated, ACM becomes the “green checkmark” — until then, ALB HTTPS won’t work.
+resource "aws_acm_certificate_validation" "echobase_acm_validation01" {
+  certificate_arn = aws_acm_certificate.echobase_acm_cert01.arn
+
+  # TODO: if using DNS validation, students must pass validation_record_fqdns
+  validation_record_fqdns = [for record in aws_route53_record.echobase_acm_validation : record.fqdn]
+}
+
+############################################
+# ALB Listeners: HTTP -> HTTPS redirect, HTTPS -> TG
+############################################
+
+# Explanation: HTTP listener is the decoy airlock — it redirects everyone to the secure entrance.
+resource "aws_lb_listener" "echobase_http_listener01" {
+  load_balancer_arn = aws_lb.echobase_alb01.arn
+  port              = 80
+  protocol          = "HTTP"
+
+  default_action {
+    type = "redirect"
+    redirect {
+      port        = "443"
+      protocol    = "HTTPS"
+      status_code = "HTTP_301"
+    }
+  }
+}
+
+# Explanation: HTTPS listener is the real hangar bay — TLS terminates here, then traffic goes to private targets.
+resource "aws_lb_listener" "echobase_https_listener01" {
+  load_balancer_arn = aws_lb.echobase_alb01.arn
+  port              = 443
+  protocol          = "HTTPS"
+  ssl_policy        = "ELBSecurityPolicy-TLS13-1-2-2021-06"
+  certificate_arn   = aws_acm_certificate_validation.echobase_acm_validation01.certificate_arn
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.echobase_tg01.arn
+  }
+
+  depends_on = [aws_acm_certificate_validation.echobase_acm_validation01]
 }
 # ^^^ added by Lonnie Hodges on 2026-01-19

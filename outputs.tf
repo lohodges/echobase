@@ -53,21 +53,21 @@ output "echobase_private_ec2_instance_id_bonus" {
 # # added by Lonnie Hodges
 # #Bonus-B outputs (append to outputs.tf)
 # # Explanation: Outputs are the mission coordinates — where to point your browser and your blasters.
-# output "echobase_alb_dns_name" {
-#   value = aws_lb.echobase_alb01.dns_name
-# }
+output "echobase_alb_dns_name" {
+  value = aws_lb.echobase_alb01.dns_name
+}
 
-# output "echobase_app_fqdn" {
-#   value = "${var.app_subdomain}.${var.domain_name}"
-# }
+output "echobase_app_fqdn" {
+  value = "${var.app_subdomain}.${var.domain_name}"
+}
 
-# output "echobase_target_group_arn" {
-#   value = aws_lb_target_group.echobase_tg01.arn
-# }
+output "echobase_target_group_arn" {
+  value = aws_lb_target_group.echobase_tg01.arn
+}
 
-# output "echobase_acm_cert_arn" {
-#   value = aws_acm_certificate.echobase_acm_cert01.arn
-# }
+output "echobase_acm_cert_arn" {
+  value = aws_acm_certificate.echobase_acm_cert01.arn
+}
 
 # output "echobase_waf_arn" {
 #   value = var.enable_waf ? aws_wafv2_web_acl.echobase_waf01[0].arn : null
