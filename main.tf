@@ -291,6 +291,11 @@ resource "aws_db_subnet_group" "echobase_rds_subnet_group01" {
 ############################################
 # RDS Instance (MySQL)
 ############################################
+# added by Lonnie Hodges on 2026-01-20
+data "aws_ssm_parameter" "echobase_db_password_ssm01" {
+  name            = "db_password"
+  with_decryption = true
+}
 
 # Explanation: This is the holocron of state—your relational data lives here, not on the EC2.
 resource "aws_db_instance" "echobase_rds01" {
@@ -300,7 +305,7 @@ resource "aws_db_instance" "echobase_rds01" {
   allocated_storage = 20
   db_name           = var.db_name
   username          = var.db_username
-  password          = var.db_password
+  password          = data.aws_ssm_parameter.echobase_db_password_ssm01.value
 
   db_subnet_group_name   = aws_db_subnet_group.echobase_rds_subnet_group01.name
   vpc_security_group_ids = [aws_security_group.echobase_rds_sg01.id]
@@ -570,13 +575,15 @@ resource "aws_secretsmanager_secret" "echobase_db_secret01" {
   recovery_window_in_days = 0
 }
 
+
+
 # Explanation: Secret payload—students should align this structure with their app (and support rotation later).
 resource "aws_secretsmanager_secret_version" "echobase_db_secret_version01" {
   secret_id = aws_secretsmanager_secret.echobase_db_secret01.id
 
   secret_string = jsonencode({
     username = var.db_username
-    password = var.db_password
+    password = data.aws_ssm_parameter.echobase_db_password_ssm01.value
     host     = aws_db_instance.echobase_rds01.address
     port     = aws_db_instance.echobase_rds01.port
     dbname   = var.db_name
@@ -829,22 +836,22 @@ resource "aws_vpc_security_group_ingress_rule" "echobase_tls_ec2_ingress_from_in
 
 # Explanation: echobase only opens the hangar door — allow ALB -> EC2 on app port (e.g., 443).
 resource "aws_vpc_security_group_egress_rule" "echobase_egress_to_ec2" {
-  security_group_id = aws_security_group.echobase_alb_sg01.id
+  security_group_id            = aws_security_group.echobase_alb_sg01.id
   referenced_security_group_id = aws_security_group.echobase_ec2_sg01.id
-  ip_protocol       = "tcp"
-  from_port         = 80
-  to_port           = 80
+  ip_protocol                  = "tcp"
+  from_port                    = 80
+  to_port                      = 80
 
   # TODO: students ensure EC2 app listens on this port (or change to 8080, etc.)
 }
 
 # Explanation: echobase only opens the hangar door — allow ALB -> EC2 on app port (e.g., 443).
 resource "aws_vpc_security_group_egress_rule" "echobase_tls_egress_to_ec2" {
-  security_group_id = aws_security_group.echobase_alb_sg01.id
+  security_group_id            = aws_security_group.echobase_alb_sg01.id
   referenced_security_group_id = aws_security_group.echobase_ec2_sg01.id
-  ip_protocol       = "tcp"
-  from_port         = 443
-  to_port           = 443
+  ip_protocol                  = "tcp"
+  from_port                    = 443
+  to_port                      = 443
 
   # TODO: students ensure EC2 app listens on this port (or change to 8080, etc.)
 }

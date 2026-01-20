@@ -74,12 +74,14 @@ variable "db_username" {
   default     = "admin" # TODO: student supplies
 }
 
-variable "db_password" {
-  description = "DB master password (DO NOT hardcode in real life; for lab only)."
-  type        = string
-  sensitive   = true
-  default     = "echobasepw" # TODO: student supplies
-}
+# added by Lonnie Hodges on 2026-01-20
+# COMMENTED out to stop using plaintext password that is visibile in Git and Github
+# variable "db_password" {
+#   description = "DB master password (DO NOT hardcode in real life; for lab only)."
+#   type        = string
+#   sensitive   = true
+#   default     = "" # TODO: student supplies
+# }
 
 variable "sns_email_endpoint" {
   description = "Email for SNS subscription (PagerDuty simulation)."
