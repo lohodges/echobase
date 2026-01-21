@@ -66,7 +66,7 @@ output "echobase_target_group_arn" {
 }
 
 output "echobase_acm_cert_arn" {
-  value = aws_acm_certificate.echobase_acm_cert01.arn
+  value = aws_acm_certificate.echobase_acm_cert02.arn
 }
 
 output "echobase_waf_arn" {
