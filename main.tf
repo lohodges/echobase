@@ -963,9 +963,9 @@ resource "aws_route53_record" "app" {
 }
 
 data "aws_route53_zone" "echobase_click" {
-  zone_id = "Z0828030PI6PCZKRD9SW"
-  #name         = var.domain_name
-  #private_zone = false
+  #zone_id = "Z0828030PI6PCZKRD9SW"
+  name         = var.domain_name
+  private_zone = false
 }
 
 resource "aws_route53_record" "echobase_acm_validation" {
