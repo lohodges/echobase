@@ -1344,6 +1344,9 @@ resource "aws_s3_bucket" "echobase_firehose_waf_dest_bucket01" {
 
   bucket = "${var.project_name}-waf-firehose-dest-${data.aws_caller_identity.echobase_self01.account_id}"
 
+  # added by Lonnie Hodges on 2026-01-21
+  force_destroy = true
+
   tags = {
     Name = "${var.project_name}-waf-firehose-dest-bucket01"
   }
