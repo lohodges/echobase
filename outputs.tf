@@ -86,3 +86,20 @@ output "echobase_apex_url_https" {
 output "echobase_alb_logs_bucket_name" {
   value = var.enable_alb_access_logs ? aws_s3_bucket.echobase_alb_logs_bucket01[0].bucket : null
 }
+
+# Explanation: Coordinates for the WAF log destination—echobase wants to know where the footprints landed.
+output "echobase_waf_log_destination" {
+  value = var.waf_log_destination
+}
+
+output "echobase_waf_cw_log_group_name" {
+  value = var.waf_log_destination == "cloudwatch" ? aws_cloudwatch_log_group.echobase_waf_log_group01[0].name : null
+}
+
+output "echobase_waf_logs_s3_bucket" {
+  value = var.waf_log_destination == "s3" ? aws_s3_bucket.echobase_waf_logs_bucket01[0].bucket : null
+}
+
+output "echobase_waf_firehose_name" {
+  value = var.waf_log_destination == "firehose" ? aws_kinesis_firehose_delivery_stream.echobase_waf_firehose01[0].name : null
+}

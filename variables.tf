@@ -169,3 +169,23 @@ variable "alb_access_logs_prefix" {
   type        = string
   default     = "alb-access-logs"
 }
+
+# added by Lonnie Hodges on 2026-01-21 (1c_bonus-E.md)
+variable "waf_log_destination" {
+  description = "Choose ONE destination per WebACL: cloudwatch | s3 | firehose"
+  type        = string
+  default     = "cloudwatch"
+}
+
+variable "waf_log_retention_days" {
+  description = "Retention for WAF CloudWatch log group."
+  type        = number
+  default     = 14
+}
+
+variable "enable_waf_sampled_requests_only" {
+  description = "If true, students can optionally filter/redact fields later. (Placeholder toggle.)"
+  type        = bool
+  default     = false
+}
+# ^^^ added by Lonnie Hodges on 2026-01-21
