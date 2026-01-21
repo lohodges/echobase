@@ -951,9 +951,32 @@ resource "aws_acm_certificate" "echobase_acm_cert01" {
 # resource "aws_route53_record" "echobase_acm_validation" { ... }
 #
 
-resource "aws_route53_record" "app" {
-  zone_id = data.aws_route53_zone.echobase_click.zone_id
-  name    = "${var.app_subdomain}.${var.domain_name}"
+# resource "aws_route53_record" "app" {
+#   zone_id = data.aws_route53_zone.echobase_click.zone_id
+#   name    = "${var.app_subdomain}.${var.domain_name}"
+#   type    = "A"
+
+#   alias {
+#     name                   = aws_lb.echobase_alb01.dns_name
+#     zone_id                = aws_lb.echobase_alb01.zone_id
+#     evaluate_target_health = true
+#   }
+# }
+resource "aws_route53_record" "echobase_apex_alias01" {
+  zone_id = var.route53_hosted_zone_id
+  name    = local.echobase_fqdn
+  type    = "A"
+
+  alias {
+    name                   = aws_lb.echobase_alb01.dns_name
+    zone_id                = aws_lb.echobase_alb01.zone_id
+    evaluate_target_health = true
+  }
+}
+
+resource "aws_route53_record" "echobase_app_alias01" {
+  zone_id = var.route53_hosted_zone_id
+  name    = local.echobase_app_fqdn
   type    = "A"
 
   alias {
