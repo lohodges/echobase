@@ -8,7 +8,7 @@ locals {
   echobase_secret_arn_guess = "arn:aws:secretsmanager:${data.aws_region.echobase_region01.region}:${data.aws_caller_identity.echobase_self01.account_id}:secret:${local.name_prefix}/rds/mysql*"
 
   # Explanation: This is the roar address — where the galaxy finds your app.
-  echobase_fqdn = "${var.app_subdomain}.${var.domain_name}"
+  echobase_fqdn = var.domain_name
 
   # Explanation: echobase needs a home planet—Route53 hosted zone is your DNS territory.
   echobase_zone_name = var.domain_name
@@ -871,6 +871,13 @@ resource "aws_lb" "echobase_alb01" {
   subnets         = aws_subnet.echobase_public_subnets[*].id
 
   # TODO: students can enable access logs to S3 as a stretch goal
+  # Explanation: Turn on access logs—Echobase wants receipts when something goes wrong.
+  # added by Lonnie Hodges on 2026-01-20
+  access_logs {
+    bucket  = aws_s3_bucket.echobase_alb_logs_bucket01[0].bucket
+    prefix  = var.alb_access_logs_prefix
+    enabled = var.enable_alb_access_logs
+  }
 
   tags = {
     Name = "${var.project_name}-alb01"
@@ -929,7 +936,7 @@ resource "aws_lb_target_group_attachment" "echobase_tg_attach02" {
 
 # Explanation: TLS is the diplomatic passport — browsers trust you, and echobase stops growling at plaintext.
 resource "aws_acm_certificate" "echobase_acm_cert01" {
-  domain_name       = local.echobase_fqdn
+  domain_name       = local.echobase_app_fqdn
   validation_method = var.certificate_validation_method
 
   # TODO: students can add subject_alternative_names like var.domain_name if desired
@@ -1157,7 +1164,81 @@ resource "aws_cloudwatch_dashboard" "echobase_dashboard01" {
     ]
   })
 }
+
+############################################
+# S3 bucket for ALB access logs
+############################################
+
+# Explanation: This bucket is echobase’s log vault—every visitor to the ALB leaves footprints here.
+resource "aws_s3_bucket" "echobase_alb_logs_bucket01" {
+  count = var.enable_alb_access_logs ? 1 : 0
+
+  bucket = "${var.project_name}-alb-logs-${data.aws_caller_identity.echobase_self01.account_id}"
+
+  tags = {
+    Name = "${var.project_name}-alb-logs-bucket01"
+  }
+}
+
+# Explanation: Block public access—echobase does not publish the ship’s black box to the galaxy.
+resource "aws_s3_bucket_public_access_block" "echobase_alb_logs_pab01" {
+  count = var.enable_alb_access_logs ? 1 : 0
+
+  bucket                  = aws_s3_bucket.echobase_alb_logs_bucket01[0].id
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+# Explanation: Bucket ownership controls prevent log delivery chaos—echobase likes clean chain-of-custody.
+resource "aws_s3_bucket_ownership_controls" "echobase_alb_logs_owner01" {
+  count = var.enable_alb_access_logs ? 1 : 0
+
+  bucket = aws_s3_bucket.echobase_alb_logs_bucket01[0].id
+  rule {
+    object_ownership = "BucketOwnerPreferred"
+  }
+}
+
+# Explanation: TLS-only—echobase growls at plaintext and throws it out an airlock.
+resource "aws_s3_bucket_policy" "echobase_alb_logs_policy01" {
+  count = var.enable_alb_access_logs ? 1 : 0
+
+  bucket = aws_s3_bucket.echobase_alb_logs_bucket01[0].id
+
+  # NOTE: This is a skeleton. Students may need to adjust for region/account specifics.
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid       = "DenyInsecureTransport"
+        Effect    = "Deny"
+        Principal = "*"
+        Action    = "s3:*"
+        Resource = [
+          aws_s3_bucket.echobase_alb_logs_bucket01[0].arn,
+          "${aws_s3_bucket.echobase_alb_logs_bucket01[0].arn}/*"
+        ]
+        Condition = {
+          Bool = { "aws:SecureTransport" = "false" }
+        }
+      },
+      {
+        Sid    = "AllowELBPutObject"
+        Effect = "Allow"
+        Principal = {
+          Service = "logdelivery.elasticloadbalancing.amazonaws.com"
+        }
+        Action   = "s3:PutObject"
+        Resource = "${aws_s3_bucket.echobase_alb_logs_bucket01[0].arn}/${var.alb_access_logs_prefix}/AWSLogs/${data.aws_caller_identity.echobase_self01.account_id}/*"
+      },
+
+    ]
+  })
+}
 # ^^^ added by Lonnie Hodges on 2026-01-20
+
 ############################################
 # Bonus B - WAF Logging (CloudWatch Logs OR S3 OR Firehose)
 # One destination per Web ACL, choose via var.waf_log_destination.

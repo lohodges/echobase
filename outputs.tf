@@ -69,11 +69,20 @@ output "echobase_acm_cert_arn" {
   value = aws_acm_certificate.echobase_acm_cert01.arn
 }
 
-# output "echobase_waf_arn" {
-#   value = var.enable_waf ? aws_wafv2_web_acl.echobase_waf01[0].arn : null
-# }
+output "echobase_waf_arn" {
+  value = var.enable_waf ? aws_wafv2_web_acl.echobase_waf01[0].arn : null
+}
 
-# output "echobase_dashboard_name" {
-#   value = aws_cloudwatch_dashboard.echobase_dashboard01.dashboard_name
-# }
+output "echobase_dashboard_name" {
+  value = aws_cloudwatch_dashboard.echobase_dashboard01.dashboard_name
+}
 
+# Explanation: The apex URL is the front gate—humans type this when they forget subdomains.
+output "echobase_apex_url_https" {
+  value = "https://${var.domain_name}"
+}
+
+# Explanation: Log bucket name is where the footprints live—useful when hunting 5xx or WAF blocks.
+output "echobase_alb_logs_bucket_name" {
+  value = var.enable_alb_access_logs ? aws_s3_bucket.echobase_alb_logs_bucket01[0].bucket : null
+}
