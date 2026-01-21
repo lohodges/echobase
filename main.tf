@@ -940,6 +940,7 @@ resource "aws_acm_certificate" "echobase_acm_cert02" {
   validation_method = var.certificate_validation_method
 
   # TODO: students can add subject_alternative_names like var.domain_name if desired
+  # added by Lonnie Hodges on 2026-01-21
   subject_alternative_names = [local.echobase_fqdn]
 
   tags = {
@@ -1301,6 +1302,9 @@ resource "aws_s3_bucket" "echobase_waf_logs_bucket01" {
   count = var.waf_log_destination == "s3" ? 1 : 0
 
   bucket = "aws-waf-logs-${var.project_name}-${data.aws_caller_identity.echobase_self01.account_id}"
+
+  # added by Lonnie Hodges on 2026-01-21
+  force_destroy = true
 
   tags = {
     Name = "${var.project_name}-waf-logs-bucket01"
