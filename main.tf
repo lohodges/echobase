@@ -1175,6 +1175,8 @@ resource "aws_s3_bucket" "echobase_alb_logs_bucket01" {
 
   bucket = "${var.project_name}-alb-logs-${data.aws_caller_identity.echobase_self01.account_id}"
 
+  force_destroy = true
+
   tags = {
     Name = "${var.project_name}-alb-logs-bucket01"
   }
