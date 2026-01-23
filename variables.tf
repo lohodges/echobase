@@ -155,7 +155,8 @@ variable "manage_route53_in_terraform" {
 variable "route53_hosted_zone_id" {
   description = "If manage_route53_in_terraform=false, provide existing Hosted Zone ID for domain."
   type        = string
-  default     = "Z0828030PI6PCZKRD9SW"
+  # change to your zone ID
+  default = "Z0828030PI6PCZKRD9SW"
 }
 
 variable "enable_alb_access_logs" {
