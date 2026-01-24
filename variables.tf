@@ -86,7 +86,7 @@ variable "db_username" {
 variable "sns_email_endpoint" {
   description = "Email for SNS subscription (PagerDuty simulation)."
   type        = string
-  default     = "lonnie@robustci.com" # TODO: student supplies
+  default     = "lonnie.hodges@robustci.com" # TODO: student supplies
 }
 
 # added by Lonnie Hodges 2026-01-17

@@ -1124,11 +1124,24 @@ resource "aws_cloudwatch_metric_alarm" "echobase_alb_5xx_alarm01" {
     LoadBalancer = aws_lb.echobase_alb01.arn_suffix
   }
 
-  alarm_actions = [aws_sns_topic.echobase_sns_topic01.arn]
+  alarm_actions = [aws_sns_topic.echobase_sns_topic02.arn]
 
   tags = {
     Name = "${var.project_name}-alb-5xx-alarm01"
   }
+}
+
+# added by Lonnie Hodges on 2026-01-23
+# Explanation: SNS is the distress beacon—when the DB dies, the galaxy (your inbox) must hear about it.
+resource "aws_sns_topic" "echobase_sns_topic02" {
+  name = "${local.name_prefix}-alb-5xx-incidents"
+}
+
+# Explanation: Email subscription = “poor man’s PagerDuty”—still enough to wake you up at 3AM.
+resource "aws_sns_topic_subscription" "echobase_sns_sub02" {
+  topic_arn = aws_sns_topic.echobase_sns_topic02.arn
+  protocol  = "email"
+  endpoint  = var.sns_email_endpoint
 }
 
 ############################################

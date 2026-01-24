@@ -89,6 +89,13 @@ Alarm Creation (example)
           --evaluation-periods 1 \
           --alarm-actions arn:aws:sns:us-east-2:746669200167:echobase-db-incidents02
 
+aws cloudwatch put-metric-data \
+    --namespace "Lab/RDSApp" \
+    --metric-name "DBConnectionErrors" \
+    --value 3 \
+    --unit Count
+
+
 Expected Behavior
   Alarm transitions to ALARM
   SNS notification sent

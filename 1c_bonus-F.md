@@ -24,18 +24,21 @@ A1) “What’s happening right now?” (Top actions: ALLOW/BLOCK)
   fields @timestamp, action
   | stats count() as hits by action
   | sort hits desc
+![alt text](image-5.png)
 
 A2) Top client IPs (who is hitting us the most?)
   fields @timestamp, httpRequest.clientIp as clientIp
 | stats count() as hits by clientIp
 | sort hits desc
 | limit 25
+![alt text](image-6.png)
 
 A3) Top requested URIs (what are they trying to reach?)
   fields @timestamp, httpRequest.uri as uri
 | stats count() as hits by uri
 | sort hits desc
 | limit 25
+![alt text](image-7.png)
 
 A4) Blocked requests only (who/what is being blocked?)
   fields @timestamp, action, httpRequest.clientIp as clientIp, httpRequest.uri as uri
@@ -43,6 +46,7 @@ A4) Blocked requests only (who/what is being blocked?)
 | stats count() as blocks by clientIp, uri
 | sort blocks desc
 | limit 25
+![alt text](image-8.png)
 
 A5) Which WAF rule is doing the blocking?
   fields @timestamp, action, terminatingRuleId, terminatingRuleType
@@ -50,6 +54,8 @@ A5) Which WAF rule is doing the blocking?
 | stats count() as blocks by terminatingRuleId, terminatingRuleType
 | sort blocks desc
 | limit 25
+![alt text](image-9.png)
+
 
 A6) Rate of blocks over time (did it spike?)
   fields @timestamp, httpRequest.clientIp as clientIp, httpRequest.uri as uri
@@ -60,7 +66,9 @@ A6) Rate of blocks over time (did it spike?)
 
 #edit
 fields @timestamp, httpRequest.clientIp as clientIp, httpRequest.uri as uri | filter uri =~ /wp-login|xmlrpc|\.env|admin|phpmyadmin|\.git|login/ | stats count() as hits by clientIp, uri | sort hits desc | limit 50
+![alt text](image-10.png)
 
+#A7 is duplicate of A6
 A7) Suspicious scanners (common patterns: admin paths, wp-login, etc.)
   fields @timestamp, httpRequest.clientIp as clientIp, httpRequest.uri as uri
 | filter uri like /wp-login|xmlrpc|\.env|admin|phpmyadmin|\.git|\/login/i
@@ -74,6 +82,7 @@ Some WAF log formats include httpRequest.country. If yours does:
 | stats count() as hits by country
 | sort hits desc
 | limit 25
+![alt text](image-11.png)
 
 B) App Queries (EC2 app log group)
 These assume your app logs include meaningful strings like ERROR, DBConnectionErrors, timeout, etc
@@ -84,6 +93,7 @@ B1) Count errors over time (this should line up with the alarm window)
 | filter @message like /ERROR|Exception|Traceback|DB|timeout|refused/i
 | stats count() as errors by bin(1m)
 | sort bin(1m) asc
+![alt text](image-12.png)
 
 B2) Show the most recent DB failures (triage view)
   fields @timestamp, @message
