@@ -5,6 +5,13 @@ variable "aws_region" {
   #default     = "ap-northeast-3"
 }
 
+variable "aws_region_acm" {
+  description = "CloudFront certifcate must be in us-east-1"
+  type        = string
+  default     = "us-east-1"
+  #default     = "ap-northeast-3"
+}
+
 variable "project_name" {
   description = "Prefix for naming. Students should change from 'chewbacca' to their own."
   type        = string

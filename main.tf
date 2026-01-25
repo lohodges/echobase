@@ -935,7 +935,7 @@ resource "aws_lb_target_group_attachment" "echobase_tg_attach02" {
 ##################################################################
 
 # Explanation: TLS is the diplomatic passport — browsers trust you, and echobase stops growling at plaintext.
-resource "aws_acm_certificate" "echobase_acm_cert02" {
+resource "aws_acm_certificate" "echobase_acm_cert01" {
   domain_name       = local.echobase_app_fqdn
   validation_method = var.certificate_validation_method
 
@@ -944,7 +944,7 @@ resource "aws_acm_certificate" "echobase_acm_cert02" {
   subject_alternative_names = [local.echobase_fqdn]
 
   tags = {
-    Name = "${var.project_name}-acm-cert02"
+    Name = "${var.project_name}-acm-cert01"
   }
 }
 
@@ -984,7 +984,7 @@ data "aws_route53_zone" "echobase_click" {
 
 resource "aws_route53_record" "echobase_acm_validation" {
   for_each = {
-    for dvo in aws_acm_certificate.echobase_acm_cert02.domain_validation_options : dvo.domain_name => {
+    for dvo in aws_acm_certificate.echobase_acm_cert01.domain_validation_options : dvo.domain_name => {
       name   = dvo.resource_record_name
       record = dvo.resource_record_value
       type   = dvo.resource_record_type
@@ -1001,7 +1001,7 @@ resource "aws_route53_record" "echobase_acm_validation" {
 
 # Explanation: Once validated, ACM becomes the “green checkmark” — until then, ALB HTTPS won’t work.
 resource "aws_acm_certificate_validation" "echobase_acm_validation01" {
-  certificate_arn = aws_acm_certificate.echobase_acm_cert02.arn
+  certificate_arn = aws_acm_certificate.echobase_acm_cert01.arn
 
   # TODO: if using DNS validation, students must pass validation_record_fqdns
   validation_record_fqdns = [for record in aws_route53_record.echobase_acm_validation : record.fqdn]
