@@ -28,7 +28,7 @@ locals {
 
 # Second provider configuration with an alias
 provider "aws" {
-  alias  = "east"
+  alias  = "us_east_1"
   region = "us-east-1"
 }
 #---> added by Dusty Trell on 2026-01-25 looking for role of least privilege
@@ -1146,7 +1146,7 @@ resource "aws_lb_listener_rule" "echobase_default_block01" {
 # Explanation: WAF is the shield generator — it blocks the cheap blaster fire before it hits your ALB.
 resource "aws_wafv2_web_acl" "echobase_waf01" {
   count = var.enable_waf ? 1 : 0
-
+  provider = aws.us_east_1
   name  = "${var.project_name}-waf01"
 # scope = "REGIONAL"
 #---> added by Dusty Trell on 2026-01-25 change scope to "CLOUDFRONT"
