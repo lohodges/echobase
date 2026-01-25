@@ -86,34 +86,34 @@ variable "db_username" {
 variable "sns_email_endpoint" {
   description = "Email for SNS subscription (PagerDuty simulation)."
   type        = string
-  default     = "lonnie.hodges@robustci.com" # TODO: student supplies
+  default     = "thepassportog@gmail.com" # TODO: student supplies
 }
 
 # added by Lonnie Hodges 2026-01-17
 # copied from 1c_bonus_variables.tf
-# variable "domain_name" {
-#   description = "aliases for passportog.com"
-#   type        = string
-#   default     = "passportog.com"
-# }
-
-# variable "app_subdomain" {
-#   description = "aliases for app.passportog.com"
-#   type        = string
-#   default     = "app"
-# }
-
 variable "domain_name" {
-  description = "aliases for echobase.click"
+  description = "aliases for passportog.com"
   type        = string
-  default     = "echobase.click"
+  default     = "passportog.com"
 }
 
 variable "app_subdomain" {
-  description = "aliases for app.echobase.click"
+  description = "aliases for app.passportog.com"
   type        = string
   default     = "app"
 }
+
+# variable "domain_name" {
+#   description = "aliases for echobase.click"
+#   type        = string
+#   default     = "echobase.click"
+# }
+
+# variable "app_subdomain" {
+#   description = "aliases for app.echobase.click"
+#   type        = string
+#   default     = "app"
+# }
 
 variable "certificate_validation_method" {
   description = "ACM validation method. Students can do DNS (Route53) or EMAIL."
@@ -156,7 +156,7 @@ variable "route53_hosted_zone_id" {
   description = "If manage_route53_in_terraform=false, provide existing Hosted Zone ID for domain."
   type        = string
   # change to your zone ID
-  default = "Z0828030PI6PCZKRD9SW"
+  default = "Z097727232BF3YIVUHD1R"
 }
 
 variable "enable_alb_access_logs" {
