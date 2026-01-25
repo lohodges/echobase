@@ -25,21 +25,11 @@ locals {
 ##########################################################
 #Create provider alias
 ##########################################################
-
 # Second provider configuration with an alias
 provider "aws" {
   alias  = "us_east_1"
   region = "us-east-1"
 }
-#---> added by Dusty Trell on 2026-01-25 looking for role of least privilege
-# # Provider configuration for a different account (using assume_role)
-# provider "aws" {
-#   alias  = "child_acc"
-#   region = "us-east-1"
-#   assume_role {
-#     role_arn = "arn:aws:iam::811651352867:role/*****" # Replace with your role ARN
-#   }
-# }
 ############################################
 # Bonus A - Data + Locals
 ############################################
@@ -1007,6 +997,7 @@ resource "aws_lb_target_group_attachment" "echobase_tg_attach02" {
 
 # Explanation: TLS is the diplomatic passport — browsers trust you, and echobase stops growling at plaintext.
 resource "aws_acm_certificate" "echobase_acm_cert02" {
+  provider = aws.us_east_1
   domain_name       = local.echobase_app_fqdn
   validation_method = var.certificate_validation_method
 
@@ -1195,7 +1186,7 @@ resource "aws_wafv2_web_acl_association" "echobase_waf_assoc01" {
 
   resource_arn = aws_lb.echobase_alb01.arn
   web_acl_arn  = aws_wafv2_web_acl.echobase_waf01[0].arn
-}
+tf}
 # ^^^ added by Lonnie Hodges on 2026-01-20
 
 # added by Lonnie Hodges on 2026-01-20
