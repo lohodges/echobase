@@ -189,3 +189,11 @@ Every failure here mirrors real production outages.
   “I understand how real AWS applications securely connect compute to managed databases.”
 
 That is a non-trivial claim in the job market.
+
+If you are deploying the recent updates, you will need to run this first. You can set the  '--value'' to whatever password you prefer.
+
+aws ssm put-parameter \
+    --name "db_password" \
+    --value "<Enter password>" \
+    --type "SecureString" 
+    --overwrite

@@ -51,7 +51,7 @@ def get_conn():
         db = c.get("dbname", "notesappdb")                                                                                                                                                                                                                       
         return pymysql.connect(host=host, user=user, password=password, port=port, database=db, autocommit=True)                                                                                                                                                 
     except Exception as e:                                                                                                                                                                                                                                       
-        log_to_cloudwatch(f"ERROR: DB connection failed - {e}")                                                                                                                                                                                                  
+        log_to_cloudwatch(f"DBConnectionErrors: DB connection failed - {e}")                                                                                                                                                                                                  
         raise
 
 app = Flask(__name__)
