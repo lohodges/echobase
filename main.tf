@@ -18,10 +18,6 @@ locals {
 
   # Explanation: This is the app address that will growl at the galaxy (app.echobase.click).
   echobase_app_fqdn = "${var.app_subdomain}.${var.domain_name}"
-
-  # added by Lonnie Hodges on 2026-01-25
-  echobase_acm_cert = "arn:aws:acm:${var.aws_region_acm}:${data.aws_caller_identity.echobase_self01.account_id}:certificate/*"
-
 }
 
 # added by Lonnie Hodges on 2026-01-17
@@ -959,7 +955,7 @@ resource "aws_acm_certificate" "echobase_cf_acm_cert01" {
   validation_method = var.certificate_validation_method
 
   # TODO: students can add subject_alternative_names like var.domain_name if desired
-  # added by Lonnie Hodges on 2026-01-21
+  # added by Lonnie Hodges on 2026-01-25
   subject_alternative_names = [local.echobase_fqdn]
 
   tags = {
@@ -1048,7 +1044,7 @@ resource "aws_route53_record" "echobase_cf_acm_validation" {
 
 # Explanation: Once validated, ACM becomes the “green checkmark” — until then, ALB HTTPS won’t work.
 resource "aws_acm_certificate_validation" "echobase_cf_acm_validation01" {
-  provider = aws.acm_useast1
+  provider        = aws.acm_useast1
   certificate_arn = aws_acm_certificate.echobase_cf_acm_cert01.arn
 
   # TODO: if using DNS validation, students must pass validation_record_fqdns
