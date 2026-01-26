@@ -1,12 +1,13 @@
-# Explanation: CloudFront is the only public doorway — Chewbacca stands behind it with private infrastructure.
-resource "aws_cloudfront_distribution" "chewbacca_cf01" {
+# Explanation: CloudFront is the only public doorway — echobase stands behind it with private infrastructure.
+resource "aws_cloudfront_distribution" "echobase_cf01" {
+  depends_on      = [aws_acm_certificate.echobase_cf_acm_cert01]
   enabled         = true
   is_ipv6_enabled = true
   comment         = "${var.project_name}-cf01"
 
   origin {
     origin_id   = "${var.project_name}-alb-origin01"
-    domain_name = aws_lb.chewbacca_alb01.dns_name
+    domain_name = aws_lb.echobase_alb01.dns_name
 
     custom_origin_config {
       http_port              = 80
@@ -17,8 +18,8 @@ resource "aws_cloudfront_distribution" "chewbacca_cf01" {
 
     # Explanation: CloudFront whispers the secret growl — the ALB only trusts this.
     custom_header {
-      name  = "X-Chewbacca-Growl"
-      value = random_password.chewbacca_origin_header_value01.result
+      name  = "X-echobase-Growl"
+      value = random_password.echobase_origin_header_value01.result
     }
   }
 
@@ -39,9 +40,9 @@ resource "aws_cloudfront_distribution" "chewbacca_cf01" {
   }
 
   # Explanation: Attach WAF at the edge — now WAF moved to CloudFront.
-  web_acl_id = aws_wafv2_web_acl.chewbacca_cf_waf01.arn
+  web_acl_id = aws_wafv2_web_acl.echobase_cf_waf01.arn
 
-  # TODO: students set aliases for chewbacca-growl.com and app.chewbacca-growl.com
+  # TODO: students set aliases for echobase-growl.com and app.echobase-growl.com
   aliases = [
     var.domain_name,
     "${var.app_subdomain}.${var.domain_name}"
@@ -50,6 +51,7 @@ resource "aws_cloudfront_distribution" "chewbacca_cf01" {
   # TODO: students must use ACM cert in us-east-1 for CloudFront
   viewer_certificate {
     acm_certificate_arn      = var.cloudfront_acm_cert_arn
+    #acm_certificate_arn      = local.echobase_acm_cert
     ssl_support_method       = "sni-only"
     minimum_protocol_version = "TLSv1.2_2021"
   }
@@ -63,8 +65,7 @@ resource "aws_cloudfront_distribution" "chewbacca_cf01" {
 
 #You’ll need this variable:
 variable "cloudfront_acm_cert_arn" {
-  description = "ACM certificate ARN in us-east-1 for CloudFront (covers chewbacca-growl.com and app.chewbacca-growl.com)."
+  description = "ACM certificate ARN in us-east-1 for CloudFront (covers echobase-growl.com and app.echobase-growl.com)."
   type        = string
+  default     = "arn:aws:acm:us-east-1:746669200167:certificate/063ef012-273c-409b-aaf4-f3ecffbfcd3c"
 }
-
-

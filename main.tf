@@ -18,6 +18,10 @@ locals {
 
   # Explanation: This is the app address that will growl at the galaxy (app.echobase.click).
   echobase_app_fqdn = "${var.app_subdomain}.${var.domain_name}"
+
+  # added by Lonnie Hodges on 2026-01-25
+  echobase_acm_cert = "arn:aws:acm:${var.aws_region_acm}:${data.aws_caller_identity.echobase_self01.account_id}:certificate/*"
+
 }
 
 # added by Lonnie Hodges on 2026-01-17
@@ -812,27 +816,28 @@ resource "aws_security_group" "echobase_alb_sg01" {
   }
 }
 
-# Explanation: echobase only opens the hangar door — allow ALB -> EC2 on app port (e.g., 80).
-resource "aws_vpc_security_group_ingress_rule" "echobase_ec2_ingress_from_internet" {
-  security_group_id = aws_security_group.echobase_alb_sg01.id
-  cidr_ipv4         = "0.0.0.0/0"
-  ip_protocol       = "tcp"
-  from_port         = 80
-  to_port           = 80
+# No longer needed. INternet users should not be able access the ALB
+# # Explanation: echobase only opens the hangar door — allow ALB -> EC2 on app port (e.g., 80).
+# resource "aws_vpc_security_group_ingress_rule" "echobase_ec2_ingress_from_internet" {
+#   security_group_id = aws_security_group.echobase_alb_sg01.id
+#   cidr_ipv4         = "0.0.0.0/0"
+#   ip_protocol       = "tcp"
+#   from_port         = 80
+#   to_port           = 80
 
-  # TODO: students ensure EC2 app listens on this port (or change to 8080, etc.)
-}
+#   # TODO: students ensure EC2 app listens on this port (or change to 8080, etc.)
+# }
 
-# Explanation: echobase only opens the hangar door — allow ALB -> EC2 on app port (e.g., 443).
-resource "aws_vpc_security_group_ingress_rule" "echobase_tls_ec2_ingress_from_internet" {
-  security_group_id = aws_security_group.echobase_alb_sg01.id
-  cidr_ipv4         = "0.0.0.0/0"
-  ip_protocol       = "tcp"
-  from_port         = 443
-  to_port           = 443
+# # Explanation: echobase only opens the hangar door — allow ALB -> EC2 on app port (e.g., 443).
+# resource "aws_vpc_security_group_ingress_rule" "echobase_tls_ec2_ingress_from_internet" {
+#   security_group_id = aws_security_group.echobase_alb_sg01.id
+#   cidr_ipv4         = "0.0.0.0/0"
+#   ip_protocol       = "tcp"
+#   from_port         = 443
+#   to_port           = 443
 
-  # TODO: students ensure EC2 app listens on this port (or change to 8080, etc.)
-}
+#   # TODO: students ensure EC2 app listens on this port (or change to 8080, etc.)
+# }
 
 # Explanation: echobase only opens the hangar door — allow ALB -> EC2 on app port (e.g., 443).
 resource "aws_vpc_security_group_egress_rule" "echobase_egress_to_ec2" {
@@ -948,6 +953,20 @@ resource "aws_acm_certificate" "echobase_acm_cert01" {
   }
 }
 
+resource "aws_acm_certificate" "echobase_cf_acm_cert01" {
+  provider          = aws.acm_useast1
+  domain_name       = local.echobase_app_fqdn
+  validation_method = var.certificate_validation_method
+
+  # TODO: students can add subject_alternative_names like var.domain_name if desired
+  # added by Lonnie Hodges on 2026-01-21
+  subject_alternative_names = [local.echobase_fqdn]
+
+  tags = {
+    Name = "${var.project_name}-cf-acm-cert01"
+  }
+}
+
 # Explanation: DNS validation records are the “prove you own the planet” ritual — Route53 makes this elegant.
 # TODO: students implement aws_route53_record(s) if they manage DNS in Route53.
 # resource "aws_route53_record" "echobase_acm_validation" { ... }
@@ -958,9 +977,9 @@ resource "aws_route53_record" "echobase_apex_alias01" {
   type    = "A"
 
   alias {
-    name                   = aws_lb.echobase_alb01.dns_name
-    zone_id                = aws_lb.echobase_alb01.zone_id
-    evaluate_target_health = true
+    name                   = aws_cloudfront_distribution.echobase_cf01.domain_name
+    zone_id                = aws_cloudfront_distribution.echobase_cf01.hosted_zone_id
+    evaluate_target_health = false
   }
 }
 
@@ -970,9 +989,9 @@ resource "aws_route53_record" "echobase_app_alias01" {
   type    = "A"
 
   alias {
-    name                   = aws_lb.echobase_alb01.dns_name
-    zone_id                = aws_lb.echobase_alb01.zone_id
-    evaluate_target_health = true
+    name                   = aws_cloudfront_distribution.echobase_cf01.domain_name
+    zone_id                = aws_cloudfront_distribution.echobase_cf01.hosted_zone_id
+    evaluate_target_health = false
   }
 }
 
@@ -1005,6 +1024,35 @@ resource "aws_acm_certificate_validation" "echobase_acm_validation01" {
 
   # TODO: if using DNS validation, students must pass validation_record_fqdns
   validation_record_fqdns = [for record in aws_route53_record.echobase_acm_validation : record.fqdn]
+}
+
+# added by Lonnie Hodges on 2026-01-25
+# TESTING
+resource "aws_route53_record" "echobase_cf_acm_validation" {
+  provider = aws.acm_useast1
+  for_each = {
+    for dvo in aws_acm_certificate.echobase_cf_acm_cert01.domain_validation_options : dvo.domain_name => {
+      name   = dvo.resource_record_name
+      record = dvo.resource_record_value
+      type   = dvo.resource_record_type
+    }
+  }
+
+  allow_overwrite = true
+  name            = each.value.name
+  records         = [each.value.record]
+  ttl             = 60
+  type            = each.value.type
+  zone_id         = data.aws_route53_zone.echobase_click.zone_id
+}
+
+# Explanation: Once validated, ACM becomes the “green checkmark” — until then, ALB HTTPS won’t work.
+resource "aws_acm_certificate_validation" "echobase_cf_acm_validation01" {
+  provider = aws.acm_useast1
+  certificate_arn = aws_acm_certificate.echobase_cf_acm_cert01.arn
+
+  # TODO: if using DNS validation, students must pass validation_record_fqdns
+  validation_record_fqdns = [for record in aws_route53_record.echobase_cf_acm_validation : record.fqdn]
 }
 
 ############################################
