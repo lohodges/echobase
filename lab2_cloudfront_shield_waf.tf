@@ -34,4 +34,8 @@ resource "aws_wafv2_web_acl" "echobase_cf_waf01" {
       sampled_requests_enabled   = true
     }
   }
+
+  tags = {
+    Name = "${var.project_name}-cf-waf01"
+  }
 }

@@ -487,21 +487,21 @@ resource "aws_iam_role_policy_attachment" "echobase_attach_lp_cwlogs01" {
 ############################################
 
 # Explanation: This is your “Han Solo box”—it talks to RDS and complains loudly when the DB is down.
-resource "aws_instance" "echobase_ec201" {
-  ami                    = var.ec2_ami_id
-  instance_type          = var.ec2_instance_type
-  subnet_id              = aws_subnet.echobase_private_subnets[0].id
-  vpc_security_group_ids = [aws_security_group.echobase_ec2_sg01.id]
-  iam_instance_profile   = aws_iam_instance_profile.echobase_instance_profile01.name
+# resource "aws_instance" "echobase_ec201" {
+#   ami                    = var.ec2_ami_id
+#   instance_type          = var.ec2_instance_type
+#   subnet_id              = aws_subnet.echobase_private_subnets[0].id
+#   vpc_security_group_ids = [aws_security_group.echobase_ec2_sg01.id]
+#   iam_instance_profile   = aws_iam_instance_profile.echobase_instance_profile01.name
 
-  # TODO: student supplies user_data to install app + CW agent + configure log shipping
-  # added by Lonnie Hodges
-  user_data = file("${path.module}/user_data.sh")
+#   # TODO: student supplies user_data to install app + CW agent + configure log shipping
+#   # added by Lonnie Hodges
+#   user_data = file("${path.module}/user_data.sh")
 
-  tags = {
-    Name = "${local.name_prefix}-ec201"
-  }
-}
+#   tags = {
+#     Name = "${local.name_prefix}-ec201"
+#   }
+# }
 
 # added by Lonnie Hodges on 2026-01-17
 # from bonus_a.tf
@@ -923,13 +923,13 @@ resource "aws_lb_target_group_attachment" "echobase_tg_attach01" {
   # TODO: students ensure EC2 security group allows inbound from ALB SG on this port (rule above)
 }
 
-resource "aws_lb_target_group_attachment" "echobase_tg_attach02" {
-  target_group_arn = aws_lb_target_group.echobase_tg01.arn
-  target_id        = aws_instance.echobase_ec201.id
-  port             = 80
+# resource "aws_lb_target_group_attachment" "echobase_tg_attach02" {
+#   target_group_arn = aws_lb_target_group.echobase_tg01.arn
+#   target_id        = aws_instance.echobase_ec201.id
+#   port             = 80
 
-  # TODO: students ensure EC2 security group allows inbound from ALB SG on this port (rule above)
-}
+#   # TODO: students ensure EC2 security group allows inbound from ALB SG on this port (rule above)
+# }
 
 ##################################################################
 # ACM Certificate (TLS) for app.echobase.click and echobase.click
