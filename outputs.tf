@@ -69,9 +69,9 @@ output "echobase_acm_cert_arn" {
   value = aws_acm_certificate.echobase_acm_cert01.arn
 }
 
-output "echobase_waf_arn" {
-  value = var.enable_waf ? aws_wafv2_web_acl.echobase_waf01[0].arn : null
-}
+# output "echobase_waf_arn" {
+#   value = var.enable_waf ? aws_wafv2_web_acl.echobase_waf01[0].arn : null
+# }
 
 output "echobase_dashboard_name" {
   value = aws_cloudwatch_dashboard.echobase_dashboard01.dashboard_name
