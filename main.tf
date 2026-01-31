@@ -21,6 +21,15 @@ locals {
 }
 
 # added by Lonnie Hodges on 2026-01-17
+#---> added by Dusty Trell on 2026-01-25
+##########################################################
+#Create provider alias
+##########################################################
+# Second provider configuration with an alias
+provider "aws" {
+  alias  = "us_east_1"
+  region = "us-east-1"
+}
 ############################################
 # Bonus A - Data + Locals
 ############################################
@@ -32,6 +41,18 @@ data "aws_caller_identity" "echobase_self01" {}
 data "aws_region" "echobase_region01" {}
 # ^^^ added by Lonnie Hodges on 2026-01-17
 
+# Explanation: Chewbacca only opens the hangar to CloudFront — everyone else gets the Wookiee roar.
+data "aws_ec2_managed_prefix_list" "echobase_cf_origin_facing01" {
+  name = "com.amazonaws.global.cloudfront.origin-facing"
+}
+#---> added by Dusty Trell on 2026-01-25
+
+# Explanation: This is Chewbacca’s secret handshake — if the header isn’t present, you don’t get in.
+resource "random_password" "echobase_origin_header_value01" {
+  length  = 32
+  special = false
+}
+#---> added by Dusty Trell on 2026-01-25
 
 ############################################
 # VPC + Internet Gateway
@@ -244,6 +265,20 @@ resource "aws_vpc_security_group_ingress_rule" "echobase_tls_ec2_ingress_from_al
 
   # TODO: students ensure EC2 app listens on this port (or change to 8080, etc.)
 }
+#---> added by Dusty Trell on 2026-01-25
+
+# Explanation: Only CloudFront origin-facing IPs may speak to the ALB — direct-to-ALB attacks die here.
+resource "aws_security_group_rule" "echobase_alb_ingress_cf44301" {
+  type              = "ingress"
+  security_group_id = aws_security_group.echobase_alb_sg01.id
+  from_port         = 443
+  to_port           = 443
+  protocol          = "tcp"
+
+  prefix_list_ids = [
+    data.aws_ec2_managed_prefix_list.echobase_cf_origin_facing01.id
+  ]
+}
 
 # added by Lonnie Hodges on 2026-01-19
 ############################################
@@ -326,6 +361,30 @@ resource "aws_db_instance" "echobase_rds01" {
 ############################################
 # IAM Role + Instance Profile for EC2
 ############################################
+#
+#---> added by Dusty Trell on 2026-01-25 Create Alias Role
+#Need to create provider alias  (via documentation)
+# resource "aws_iam_policy" "alias_createWebACL_role" {
+#   name        = "read_specific_secret"
+##   description = "create alias to set up us-east-1 WebACL"
+
+#   # Terraform's "jsonencode" function converts a
+#   # Terraform expression result to valid JSON syntax.
+#   policy = jsonencode({
+#  "Version": "2012-10-17",
+#     "Statement": [
+#         {
+#             "Effect": "Allow",
+#             "Action": [
+#                 "wafv2:CreateWebACL",
+#                 "wafv2:ListResourcesForWebACL",
+#                 "wafv2:ListWebACLs"
+#             ],
+#             "Resource": "*"
+#       }
+#     ]
+#   })
+# }
 
 # added by Lonnie Hodges
 resource "aws_iam_policy" "policy_ec2_read_secret" {
@@ -343,7 +402,7 @@ resource "aws_iam_policy" "policy_ec2_read_secret" {
         "Effect" : "Allow",
         "Action" : ["secretsmanager:GetSecretValue"],
         # "Resource" : "arn:aws:secretsmanager:<REGION>:<ACCOUNT ID>:secret:echobase/rds/mysql*"
-        "Resource" : "arn:aws:secretsmanager:us-east-2:746669200167:secret:echobase/rds/mysql*"
+        "Resource" : "arn:aws:secretsmanager:us-east-2:811651352867:secret:echobase/rds/mysql*"
       }
     ]
   })
@@ -583,10 +642,12 @@ resource "aws_secretsmanager_secret_version" "echobase_db_secret_version01" {
 
   secret_string = jsonencode({
     username = var.db_username
-    password = data.aws_ssm_parameter.echobase_db_password_ssm01.value
+
     host     = aws_db_instance.echobase_rds01.address
     port     = aws_db_instance.echobase_rds01.port
     dbname   = var.db_name
+    password = data.aws_ssm_parameter.echobase_db_password_ssm01.value
+ # password = data.aws_ssm_parameter.echobase_db_password_ssm01.value
   })
 }
 
@@ -936,7 +997,7 @@ resource "aws_lb_target_group_attachment" "echobase_tg_attach01" {
 ##################################################################
 
 # Explanation: TLS is the diplomatic passport — browsers trust you, and echobase stops growling at plaintext.
-resource "aws_acm_certificate" "echobase_acm_cert01" {
+resource "aws_acm_certificate" "echobase_acm_cert02" {
   domain_name       = local.echobase_app_fqdn
   validation_method = var.certificate_validation_method
 
@@ -1088,6 +1149,29 @@ resource "aws_lb_listener" "echobase_https_listener01" {
 }
 # ^^^ added by Lonnie Hodges on 2026-01-19
 
+############################################
+# Load Balancer listener rule
+############################################
+# Explanation: If you don’t know the growl, you get a 403 — Chewbacca does not negotiate.
+resource "aws_lb_listener_rule" "echobase_default_block01" {
+  listener_arn = aws_lb_listener.echobase_https_listener01.arn
+  priority     = 99
+
+  action {
+    type = "fixed-response"
+    fixed_response {
+      content_type = "text/plain"
+      message_body = "Forbidden"
+      status_code  = "403"
+    }
+  }
+
+  condition {
+    path_pattern { values = ["*"] }
+  }
+}
+
+
 # added by Lonnie Hodges on 2026-01-20
 ############################################
 # WAFv2 Web ACL (Basic managed rules)
@@ -1096,10 +1180,11 @@ resource "aws_lb_listener" "echobase_https_listener01" {
 # Explanation: WAF is the shield generator — it blocks the cheap blaster fire before it hits your ALB.
 resource "aws_wafv2_web_acl" "echobase_waf01" {
   count = var.enable_waf ? 1 : 0
-
+  provider = aws.us_east_1
   name  = "${var.project_name}-waf01"
-  scope = "REGIONAL"
-
+# scope = "REGIONAL"
+#---> added by Dusty Trell on 2026-01-25 change scope to "CLOUDFRONT"
+  scope = "CLOUDFRONT"
   default_action {
     allow {}
   }
@@ -1144,7 +1229,7 @@ resource "aws_wafv2_web_acl_association" "echobase_waf_assoc01" {
 
   resource_arn = aws_lb.echobase_alb01.arn
   web_acl_arn  = aws_wafv2_web_acl.echobase_waf01[0].arn
-}
+tf}
 # ^^^ added by Lonnie Hodges on 2026-01-20
 
 # added by Lonnie Hodges on 2026-01-20
@@ -1477,3 +1562,108 @@ resource "aws_wafv2_web_acl_logging_configuration" "echobase_waf_logging_firehos
   depends_on = [aws_wafv2_web_acl.echobase_waf01]
 }
 # ^^^ added by Lonnie Hodges on 2026-01-21
+
+#---> added by Dusty Trell on 2026-01-25
+###################################################
+#Cloudfront Attachment
+##################################################
+
+# Explanation: CloudFront is the only public doorway — Chewbacca stands behind it with private infrastructure.
+resource "aws_cloudfront_distribution" "echobase_cf01" {
+  enabled         = true
+  is_ipv6_enabled = true
+  comment         = "${var.project_name}-cf01"
+
+  origin {
+    origin_id   = "${var.project_name}-alb-origin01"
+    domain_name = aws_lb.echobase_alb01.dns_name
+    #---> added by Dusty Trell on 2026-01-25
+    
+    custom_origin_config {
+      http_port              = 80
+      https_port             = 443
+      origin_protocol_policy = "https-only"
+      origin_ssl_protocols   = ["TLSv1.2"]
+    }
+
+    # Explanation: CloudFront whispers the secret growl — the ALB only trusts this.
+    custom_header {
+      name  = "X-Echobase-Growl"
+      value = random_password.echobase_origin_header_value01.result
+    }
+  }
+
+  default_cache_behavior {
+    target_origin_id       = "${var.project_name}-alb-origin01"
+    viewer_protocol_policy = "redirect-to-https"
+
+    allowed_methods = ["GET", "HEAD", "OPTIONS", "PUT", "POST", "PATCH", "DELETE"]
+    cached_methods  = ["GET", "HEAD"]
+
+    # TODO: students choose cache policy / origin request policy for their app type
+    # For APIs, typically forward all headers/cookies/querystrings.
+    forwarded_values {
+      query_string = true
+      headers      = ["*"]
+      cookies { forward = "all" }
+    }
+  }
+
+  # Explanation: Attach WAF at the edge — now WAF moved to CloudFront.
+  #---> added by Dusty Trell on 2026-01-25
+  # used aws_wafv2_web_acl.echobase_waf01[0].arn instead of documentation web_acl_id = aws_wafv2_web_acl.chewbacca_cf_waf01.arn
+  web_acl_id = aws_wafv2_web_acl.echobase_waf01[0].arn
+
+  # TODO: students set aliases for chewbacca-growl.com and app.chewbacca-growl.com
+  aliases = [
+    var.domain_name,
+    "${var.app_subdomain}.${var.domain_name}"
+  ]
+
+  # TODO: students must use ACM cert in us-east-1 for CloudFront
+  viewer_certificate {
+    acm_certificate_arn      = var.cloudfront_acm_cert_arn
+    ssl_support_method       = "sni-only"
+    minimum_protocol_version = "TLSv1.2_2021"
+  }
+
+  restrictions {
+    geo_restriction {
+      restriction_type = "none"
+    }
+  }
+}
+
+#You’ll need this variable:
+variable "cloudfront_acm_cert_arn" {
+  description = "ACM certificate ARN in us-east-1 for CloudFront (covers passportog.com and app.passportog.com)."
+  type        = string
+}
+
+# Explanation: DNS now points to CloudFront — nobody should ever see the ALB again.
+resource "aws_route53_record" "echobase_apex_to_cf01" {
+  zone_id = local.echobase_zone_id
+  name    = var.domain_name
+  type    = "A"
+
+  alias {
+    name                   = aws_cloudfront_distribution.echobase_cf01.domain_name
+    zone_id                = aws_cloudfront_distribution.echobase_cf01.hosted_zone_id
+    evaluate_target_health = false
+  }
+}
+
+# Explanation: app.chewbacca-growl.com also points to CloudFront — same doorway, different sign.
+resource "aws_route53_record" "chewbacca_app_to_cf01" {
+  zone_id = local.echobase_zone_id
+  name    = "${var.app_subdomain}.${var.domain_name}"
+  type    = "A"
+
+  alias {
+    name                   = aws_cloudfront_distribution.echobase_cf01.domain_name
+    zone_id                = aws_cloudfront_distribution.echobase_cf01.hosted_zone_id
+    evaluate_target_health = false
+  }
+}
+#---> added by Dusty Trell on 2026-01-25
+
