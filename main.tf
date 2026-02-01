@@ -1177,6 +1177,7 @@ resource "aws_lb_listener_rule" "echobase_default_block01" {
 # WAFv2 Web ACL (Basic managed rules)
 ############################################
 
+<<<<<<< HEAD
 # Explanation: WAF is the shield generator — it blocks the cheap blaster fire before it hits your ALB.
 resource "aws_wafv2_web_acl" "echobase_waf01" {
   count = var.enable_waf ? 1 : 0
@@ -1188,49 +1189,68 @@ resource "aws_wafv2_web_acl" "echobase_waf01" {
   default_action {
     allow {}
   }
+=======
+# # Explanation: WAF is the shield generator — it blocks the cheap blaster fire before it hits your ALB.
+# resource "aws_wafv2_web_acl" "echobase_waf01" {
+#   count = var.enable_waf ? 1 : 0
 
-  visibility_config {
-    cloudwatch_metrics_enabled = true
-    metric_name                = "${var.project_name}-waf01"
-    sampled_requests_enabled   = true
-  }
+#   name  = "${var.project_name}-waf01"
+#   scope = "REGIONAL"
 
-  # Explanation: AWS managed rules are like hiring Rebel commandos — they’ve seen every trick.
-  rule {
-    name     = "AWSManagedRulesCommonRuleSet"
-    priority = 1
+#   default_action {
+#     allow {}
+#   }
+>>>>>>> e301f126da3a6386696bc89d63ca82f59bcac797
 
-    override_action {
-      none {}
-    }
+#   visibility_config {
+#     cloudwatch_metrics_enabled = true
+#     metric_name                = "${var.project_name}-waf01"
+#     sampled_requests_enabled   = true
+#   }
 
-    statement {
-      managed_rule_group_statement {
-        name        = "AWSManagedRulesCommonRuleSet"
-        vendor_name = "AWS"
-      }
-    }
+#   # Explanation: AWS managed rules are like hiring Rebel commandos — they’ve seen every trick.
+#   rule {
+#     name     = "AWSManagedRulesCommonRuleSet"
+#     priority = 1
 
-    visibility_config {
-      cloudwatch_metrics_enabled = true
-      metric_name                = "${var.project_name}-waf-common"
-      sampled_requests_enabled   = true
-    }
-  }
+#     override_action {
+#       none {}
+#     }
 
-  tags = {
-    Name = "${var.project_name}-waf01"
-  }
-}
+#     statement {
+#       managed_rule_group_statement {
+#         name        = "AWSManagedRulesCommonRuleSet"
+#         vendor_name = "AWS"
+#       }
+#     }
 
-# Explanation: Attach the shield generator to the customs checkpoint — ALB is now protected.
-resource "aws_wafv2_web_acl_association" "echobase_waf_assoc01" {
-  count = var.enable_waf ? 1 : 0
+#     visibility_config {
+#       cloudwatch_metrics_enabled = true
+#       metric_name                = "${var.project_name}-waf-common"
+#       sampled_requests_enabled   = true
+#     }
+#   }
 
+#   tags = {
+#     Name = "${var.project_name}-waf01"
+#   }
+# }
+
+# # Explanation: Attach the shield generator to the customs checkpoint — ALB is now protected.
+# resource "aws_wafv2_web_acl_association" "echobase_waf_assoc01" {
+#   count = var.enable_waf ? 1 : 0
+
+<<<<<<< HEAD
   resource_arn = aws_lb.echobase_alb01.arn
   web_acl_arn  = aws_wafv2_web_acl.echobase_waf01[0].arn
 tf}
 # ^^^ added by Lonnie Hodges on 2026-01-20
+=======
+#   resource_arn = aws_lb.echobase_alb01.arn
+#   web_acl_arn  = aws_wafv2_web_acl.echobase_waf01[0].arn
+# }
+# # ^^^ added by Lonnie Hodges on 2026-01-20
+>>>>>>> e301f126da3a6386696bc89d63ca82f59bcac797
 
 # added by Lonnie Hodges on 2026-01-20
 ############################################
@@ -1420,20 +1440,20 @@ resource "aws_cloudwatch_log_group" "echobase_waf_log_group01" {
   }
 }
 
-# Explanation: This wire connects the shield generator to the black box—WAF -> CloudWatch Logs.
-resource "aws_wafv2_web_acl_logging_configuration" "echobase_waf_logging01" {
-  count = var.enable_waf && var.waf_log_destination == "cloudwatch" ? 1 : 0
+# # Explanation: This wire connects the shield generator to the black box—WAF -> CloudWatch Logs.
+# resource "aws_wafv2_web_acl_logging_configuration" "echobase_waf_logging01" {
+#   count = var.enable_waf && var.waf_log_destination == "cloudwatch" ? 1 : 0
 
-  resource_arn = aws_wafv2_web_acl.echobase_waf01[0].arn
-  log_destination_configs = [
-    aws_cloudwatch_log_group.echobase_waf_log_group01[0].arn
-  ]
+#   resource_arn = aws_wafv2_web_acl.echobase_waf01[0].arn
+#   log_destination_configs = [
+#     aws_cloudwatch_log_group.echobase_waf_log_group01[0].arn
+#   ]
 
-  # TODO: Students can add redacted_fields (authorization headers, cookies, etc.) as a stretch goal.
-  # redacted_fields { ... }
+#   # TODO: Students can add redacted_fields (authorization headers, cookies, etc.) as a stretch goal.
+#   # redacted_fields { ... }
 
-  depends_on = [aws_wafv2_web_acl.echobase_waf01]
-}
+#   depends_on = [aws_wafv2_web_acl.echobase_waf01]
+# }
 
 ############################################
 # Option 2: S3 destination (direct)
@@ -1464,17 +1484,17 @@ resource "aws_s3_bucket_public_access_block" "echobase_waf_logs_pab01" {
   restrict_public_buckets = true
 }
 
-# Explanation: Connect shield generator to archive vault—WAF -> S3.
-resource "aws_wafv2_web_acl_logging_configuration" "echobase_waf_logging_s3_01" {
-  count = var.enable_waf && var.waf_log_destination == "s3" ? 1 : 0
+# # Explanation: Connect shield generator to archive vault—WAF -> S3.
+# resource "aws_wafv2_web_acl_logging_configuration" "echobase_waf_logging_s3_01" {
+#   count = var.enable_waf && var.waf_log_destination == "s3" ? 1 : 0
 
-  resource_arn = aws_wafv2_web_acl.echobase_waf01[0].arn
-  log_destination_configs = [
-    aws_s3_bucket.echobase_waf_logs_bucket01[0].arn
-  ]
+#   resource_arn = aws_wafv2_web_acl.echobase_waf01[0].arn
+#   log_destination_configs = [
+#     aws_s3_bucket.echobase_waf_logs_bucket01[0].arn
+#   ]
 
-  depends_on = [aws_wafv2_web_acl.echobase_waf01]
-}
+#   depends_on = [aws_wafv2_web_acl.echobase_waf01]
+# }
 
 ############################################
 # Option 3: Firehose destination (classic “stream then store”)
@@ -1551,16 +1571,16 @@ resource "aws_kinesis_firehose_delivery_stream" "echobase_waf_firehose01" {
 }
 
 # Explanation: Connect shield generator to conveyor belt—WAF -> Firehose stream.
-resource "aws_wafv2_web_acl_logging_configuration" "echobase_waf_logging_firehose01" {
-  count = var.enable_waf && var.waf_log_destination == "firehose" ? 1 : 0
+# resource "aws_wafv2_web_acl_logging_configuration" "echobase_waf_logging_firehose01" {
+#   count = var.enable_waf && var.waf_log_destination == "firehose" ? 1 : 0
 
-  resource_arn = aws_wafv2_web_acl.echobase_waf01[0].arn
-  log_destination_configs = [
-    aws_kinesis_firehose_delivery_stream.echobase_waf_firehose01[0].arn
-  ]
+#   resource_arn = aws_wafv2_web_acl.echobase_waf01[0].arn
+#   log_destination_configs = [
+#     aws_kinesis_firehose_delivery_stream.echobase_waf_firehose01[0].arn
+#   ]
 
-  depends_on = [aws_wafv2_web_acl.echobase_waf01]
-}
+#   depends_on = [aws_wafv2_web_acl.echobase_waf01]
+# }
 # ^^^ added by Lonnie Hodges on 2026-01-21
 
 #---> added by Dusty Trell on 2026-01-25

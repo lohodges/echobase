@@ -40,20 +40,26 @@ resource "aws_cloudfront_cache_policy" "echobase_cache_api_disabled01" {
   min_ttl     = 0
 
   parameters_in_cache_key_and_forwarded_to_origin {
-    cookies_config { cookie_behavior = "all" }
-    query_strings_config { query_string_behavior = "all" }
+    cookies_config {
+      cookie_behavior = "none"
+    }
+
+    query_strings_config {
+      query_string_behavior = "none"
+    }
 
     # Explanation: Forward auth-related headers to origin, but DO NOT include random headers in cache key.
     # Students: choose only required headers (Authorization is the classic case).
     headers_config {
-      header_behavior = "whitelist"
+      header_behavior = "none"
       headers {
-        items = ["Authorization", "Host"]
+        items = []
+        #items = ["Authorization", "Host"]
       }
     }
 
-    enable_accept_encoding_gzip   = true
-    enable_accept_encoding_brotli = true
+    enable_accept_encoding_gzip   = false
+    enable_accept_encoding_brotli = false
   }
 }
 
@@ -67,13 +73,19 @@ resource "aws_cloudfront_origin_request_policy" "echobase_orp_api01" {
   name    = "${var.project_name}-orp-api01"
   comment = "Forward necessary values for API calls"
 
-  cookies_config { cookie_behavior = "all" }
-  query_strings_config { query_string_behavior = "all" }
+  cookies_config {
+    cookie_behavior = "all"
+  }
+
+  query_strings_config {
+    query_string_behavior = "all"
+  }
 
   headers_config {
     header_behavior = "whitelist"
     headers {
-      items = ["Authorization", "Content-Type", "Origin", "Host"]
+      items = ["Content-Type", "Origin", "Host"]
+      #items = ["Authorization", "Content-Type", "Origin", "Host"]
     }
   }
 }
@@ -112,34 +124,33 @@ resource "aws_cloudfront_response_headers_policy" "echobase_rsp_static01" {
 }
 
 
-##############################################################
-#6) Patch your CloudFront distribution behaviors
-##############################################################
+# ##############################################################
+# #6) Patch your CloudFront distribution behaviors
+# ##############################################################
 
-# Explanation: Default behavior is conservative—echobase assumes dynamic until proven static.
-default_cache_behavior {
-  target_origin_id       = "${var.project_name}-alb-origin01"
-  viewer_protocol_policy = "redirect-to-https"
+# # Explanation: Default behavior is conservative—echobase assumes dynamic until proven static.
+# default_cache_behavior {
+#   target_origin_id       = "${var.project_name}-alb-origin01"
+#   viewer_protocol_policy = "redirect-to-https"
 
-  allowed_methods = ["GET", "HEAD", "OPTIONS", "PUT", "POST", "PATCH", "DELETE"]
-  cached_methods  = ["GET", "HEAD"]
+#   allowed_methods = ["GET", "HEAD", "OPTIONS", "PUT", "POST", "PATCH", "DELETE"]
+#   cached_methods  = ["GET", "HEAD"]
 
-  cache_policy_id          = aws_cloudfront_cache_policy.echobase_cache_api_disabled01.id
-  origin_request_policy_id = aws_cloudfront_origin_request_policy.echobase_orp_api01.id
-}
+#   cache_policy_id          = aws_cloudfront_cache_policy.echobase_cache_api_disabled01.id
+#   origin_request_policy_id = aws_cloudfront_origin_request_policy.echobase_orp_api01.id
+# }
 
-# Explanation: Static behavior is the speed lane—echobase caches it hard for performance.
-ordered_cache_behavior {
-  path_pattern           = "/static/*"
-  target_origin_id       = "${var.project_name}-alb-origin01"
-  viewer_protocol_policy = "redirect-to-https"
+# # Explanation: Static behavior is the speed lane—echobase caches it hard for performance.
+# ordered_cache_behavior {
+#   path_pattern           = "/static/*"
+#   target_origin_id       = "${var.project_name}-alb-origin01"
+#   viewer_protocol_policy = "redirect-to-https"
 
-  allowed_methods = ["GET", "HEAD", "OPTIONS"]
-  cached_methods  = ["GET", "HEAD"]
+#   allowed_methods = ["GET", "HEAD", "OPTIONS"]
+#   cached_methods  = ["GET", "HEAD"]
 
-  cache_policy_id            = aws_cloudfront_cache_policy.echobase_cache_static01.id
-  origin_request_policy_id   = aws_cloudfront_origin_request_policy.echobase_orp_static01.id
-  response_headers_policy_id = aws_cloudfront_response_headers_policy.echobase_rsp_static01.id
-}
-
+#   cache_policy_id            = aws_cloudfront_cache_policy.echobase_cache_static01.id
+#   origin_request_policy_id   = aws_cloudfront_origin_request_policy.echobase_orp_static01.id
+#   response_headers_policy_id = aws_cloudfront_response_headers_policy.echobase_rsp_static01.id
+# }
 

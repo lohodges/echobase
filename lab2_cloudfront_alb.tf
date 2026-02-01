@@ -23,6 +23,11 @@ resource "aws_cloudfront_distribution" "echobase_cf01" {
     }
   }
 
+  ##############################################################
+  #6) Patch your CloudFront distribution behaviors
+  ##############################################################
+
+  # Explanation: Default behavior is conservative—echobase assumes dynamic until proven static.
   default_cache_behavior {
     target_origin_id       = "${var.project_name}-alb-origin01"
     viewer_protocol_policy = "redirect-to-https"
@@ -30,13 +35,22 @@ resource "aws_cloudfront_distribution" "echobase_cf01" {
     allowed_methods = ["GET", "HEAD", "OPTIONS", "PUT", "POST", "PATCH", "DELETE"]
     cached_methods  = ["GET", "HEAD"]
 
-    # TODO: students choose cache policy / origin request policy for their app type
-    # For APIs, typically forward all headers/cookies/querystrings.
-    forwarded_values {
-      query_string = true
-      headers      = ["*"]
-      cookies { forward = "all" }
-    }
+    cache_policy_id          = aws_cloudfront_cache_policy.echobase_cache_api_disabled01.id
+    origin_request_policy_id = aws_cloudfront_origin_request_policy.echobase_orp_api01.id
+  }
+
+  # Explanation: Static behavior is the speed lane—echobase caches it hard for performance.
+  ordered_cache_behavior {
+    path_pattern           = "/static/*"
+    target_origin_id       = "${var.project_name}-alb-origin01"
+    viewer_protocol_policy = "redirect-to-https"
+
+    allowed_methods = ["GET", "HEAD", "OPTIONS"]
+    cached_methods  = ["GET", "HEAD"]
+
+    cache_policy_id            = aws_cloudfront_cache_policy.echobase_cache_static01.id
+    origin_request_policy_id   = aws_cloudfront_origin_request_policy.echobase_orp_static01.id
+    response_headers_policy_id = aws_cloudfront_response_headers_policy.echobase_rsp_static01.id
   }
 
   # Explanation: Attach WAF at the edge — now WAF moved to CloudFront.
