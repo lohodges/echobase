@@ -199,3 +199,11 @@ variable "enable_waf_sampled_requests_only" {
   default     = false
 }
 # ^^^ added by Lonnie Hodges on 2026-01-21
+
+# added by Lonnie Hodges on 2026-02-01
+variable "allowed_ip_cidrs" {
+  description = "List of IP CIDRs allowed to access CloudFront (e.g., your IP)"
+  type        = list(string)
+  default     = ["x.x.x.x/32"]
+}
+# ^^^ added by Lonnie Hodges on 2026-02-01

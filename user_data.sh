@@ -4,13 +4,21 @@ dnf install -y python3-pip
 pip3 install flask pymysql boto3
 
 mkdir -p /opt/rdsapp
+mkdir -p /opt/rdsapp/static
+
+cat >/opt/rdsapp/static/example.txt <<EOF
+This is a sample file that should be cached.
+EOF
+
 cat >/opt/rdsapp/app.py <<'PY'
 import json
 import os
 import boto3
 import pymysql
 import time
-from flask import Flask, request
+import random
+from datetime import datetime, timezone
+from flask import Flask, request, make_response, jsonify
 
 REGION = os.environ.get("AWS_REGION", "us-east-2")
 SECRET_ID = os.environ.get("SECRET_ID", "echobase/rds/mysql")
@@ -113,6 +121,33 @@ def list_notes():
     out += "</ul>"
     return out
 
+@app.route("/api/public-feed")
+def public_feed():
+    messages = ["If you believe it will work, you'll see opportunities. If you believe it won't, you will see obstacles.",
+    "Believe you can and you're halfway there.",
+    "Success is not final, failure is not fatal: it is the courage to continue that counts."]
+    server_time_utc = datetime.now(timezone.utc)
+    message_index = random.randrange(0, 3)
+    message_of_the_minute = messages[message_index]
+    response_data = make_response({
+        "combined": {
+                "message": message_of_the_minute,
+                "server_time_utc": server_time_utc
+                }
+        })
+    response_data.headers["Cache-Control"] = "public, s-maxage=30, max-age=0"
+    return response_data
+
+@app.route("/api/user-feed")
+def private_feed():
+    response_data = make_response("private user data")
+    response_data.headers["Cache-Control"] = "private, no-store"
+    return response_data
+
+@app.route("/example.txt")
+def example_file():
+    return app.send_static_file("example.txt")
+
 @app.route("/health")
 def health_check():
     return "healthy"
@@ -142,10 +177,10 @@ systemctl start rdsapp
 
 # added by Lonnie Hodges 2026-01-16
 # install Cloudwatch Agent
-sudo yum install -y selinux-policy-devel policycoreutils-devel rpm-build git
+yum install -y selinux-policy-devel policycoreutils-devel rpm-build git
 mkdir -p /opt/cwagent
 wget -P /opt/cwagent "https://amazoncloudwatch-agent.s3.amazonaws.com/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm"
-sudo rpm -U /opt/cwagent/amazon-cloudwatch-agent.rpm
+rpm -U /opt/cwagent/amazon-cloudwatch-agent.rpm
 
 # Create CloudWatch Agent config
 cat >/opt/aws/amazon-cloudwatch-agent/bin/config.json <<'CWCONFIG'
@@ -185,7 +220,7 @@ cat >/opt/aws/amazon-cloudwatch-agent/bin/config.json <<'CWCONFIG'
 }
 CWCONFIG
 
-sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -c file:/opt/aws/amazon-cloudwatch-agent/bin/config.json -s
-sudo systemctl enable amazon-cloudwatch-agent
-sudo systemctl start amazon-cloudwatch-agent
+/opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -c file:/opt/aws/amazon-cloudwatch-agent/bin/config.json -s
+systemctl enable amazon-cloudwatch-agent
+systemctl start amazon-cloudwatch-agent
 # ^^^ added by Lonnie Hodges 2026-01-16

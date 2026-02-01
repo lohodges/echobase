@@ -824,8 +824,9 @@ resource "aws_security_group" "echobase_alb_sg01" {
 #   # TODO: students ensure EC2 app listens on this port (or change to 8080, etc.)
 # }
 
-# # Explanation: echobase only opens the hangar door — allow ALB -> EC2 on app port (e.g., 443).
+# Explanation: echobase only opens the hangar door — allow ALB -> EC2 on app port (e.g., 443).
 # resource "aws_vpc_security_group_ingress_rule" "echobase_tls_ec2_ingress_from_internet" {
+#   #security_group_id = aws_security_group.echobase_alb_sg01.id
 #   security_group_id = aws_security_group.echobase_alb_sg01.id
 #   cidr_ipv4         = "0.0.0.0/0"
 #   ip_protocol       = "tcp"
@@ -1477,4 +1478,3 @@ resource "aws_kinesis_firehose_delivery_stream" "echobase_waf_firehose01" {
 #   depends_on = [aws_wafv2_web_acl.echobase_waf01]
 # }
 # ^^^ added by Lonnie Hodges on 2026-01-21
-# try get pull again
