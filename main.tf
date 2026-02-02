@@ -824,7 +824,7 @@ resource "aws_security_group" "echobase_alb_sg01" {
 #   # TODO: students ensure EC2 app listens on this port (or change to 8080, etc.)
 # }
 
-# Explanation: echobase only opens the hangar door — allow ALB -> EC2 on app port (e.g., 443).
+# # chobase only opens the hangar door — allow ALB -> EC2 on app port (e.g., 443).
 # resource "aws_vpc_security_group_ingress_rule" "echobase_tls_ec2_ingress_from_internet" {
 #   #security_group_id = aws_security_group.echobase_alb_sg01.id
 #   security_group_id = aws_security_group.echobase_alb_sg01.id
@@ -991,6 +991,32 @@ resource "aws_route53_record" "echobase_app_alias01" {
     evaluate_target_health = false
   }
 }
+
+# added by Lonnie Hodges on 2026-02-02
+resource "aws_route53_record" "echobase_apex_ipv6_alias01" {
+  zone_id = var.route53_hosted_zone_id
+  name    = local.echobase_fqdn
+  type    = "AAAA"
+
+  alias {
+    name                   = aws_cloudfront_distribution.echobase_cf01.domain_name
+    zone_id                = aws_cloudfront_distribution.echobase_cf01.hosted_zone_id
+    evaluate_target_health = false
+  }
+}
+
+resource "aws_route53_record" "echobase_app_ipv6_alias01" {
+  zone_id = var.route53_hosted_zone_id
+  name    = local.echobase_app_fqdn
+  type    = "AAAA"
+
+  alias {
+    name                   = aws_cloudfront_distribution.echobase_cf01.domain_name
+    zone_id                = aws_cloudfront_distribution.echobase_cf01.hosted_zone_id
+    evaluate_target_health = false
+  }
+}
+# ^^^ added by Lonnie Hodges on 2026-02-02
 
 data "aws_route53_zone" "echobase_click" {
   #zone_id = "Z0828030PI6PCZKRD9SW" for echobase.click

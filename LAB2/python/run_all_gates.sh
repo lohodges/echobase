@@ -74,7 +74,8 @@ have_cmd() { command -v "$1" >/dev/null 2>&1; }
 mkdirp() { mkdir -p "$1" >/dev/null 2>&1 || true; }
 
 json_escape() {
-  sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' -e ':a;N;$!ba;s/\n/\\n/g'
+  #sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' -e ':a;N;$!ba;s/\n/\\n/g'
+  sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' -e 's/\t/\\t/g' -e 's/\r/\\r/g' -e ':a;N;$!ba;s/\n/\\n/g'
 }
 
 iso_to_epoch() { date -u -d "$1" +%s 2>/dev/null || echo ""; }
@@ -240,27 +241,64 @@ else
 fi
 
 # ---------- WAF association check ----------
+
+# REMOVED by Lonnie Hodges on 2026-02-02
+# https://docs.aws.amazon.com/cli/latest/reference/wafv2/get-web-acl-for-resource.html
+# For Amazon CloudFront, don’t use this call. Instead, call the CloudFront action GetDistributionConfig.
+# For information, see GetDistributionConfig in the Amazon CloudFront API Reference 
+# ^^^ added by Lonnie Hodges on 2026-02-02
+
 # CloudFront WAFv2 resource ARN format:
 # arn:aws:cloudfront::<account-id>:distribution/<distribution-id>
-account_id="$(aws sts get-caller-identity --query Account --output text 2>/dev/null || echo "")"
-cf_resource_arn=""
-if [[ -n "$account_id" ]]; then
-  cf_resource_arn="arn:aws:cloudfront::${account_id}:distribution/${CF_DISTRIBUTION_ID}"
-fi
+# account_id="$(aws sts get-caller-identity --query Account --output text 2>/dev/null || echo "")"
+# cf_resource_arn=""
+# if [[ -n "$account_id" ]]; then
+#   cf_resource_arn="arn:aws:cloudfront::${account_id}:distribution/${CF_DISTRIBUTION_ID}"
+# fi
 
+# if [[ "$REQUIRE_WAF_ASSOCIATION" == "true" ]]; then
+#   if [[ -n "$cf_resource_arn" ]]; then
+#     waf_assoc_arn="$(aws wafv2 get-web-acl-for-resource --resource-arn "$cf_resource_arn" --region "$CF_ACM_REGION" \
+#       --query "WebACL.ARN" --output text 2>/dev/null || echo "")"
+#     if [[ -n "$waf_assoc_arn" && "$waf_assoc_arn" != "None" ]]; then
+#       add_detail "PASS: WAF WebACL is associated with CloudFront."
+#       if [[ -n "$WAF_WEB_ACL_ARN" && "$waf_assoc_arn" != "$WAF_WEB_ACL_ARN" ]]; then
+#         add_warning "WARN: Associated WebACL ARN differs from WAF_WEB_ACL_ARN input (expected=$WAF_WEB_ACL_ARN, actual=$waf_assoc_arn)."
+#       fi
+
+#       # Warn if no managed rule groups detected
+#       managed_count="$(aws wafv2 get-web-acl --id "$(echo "$waf_assoc_arn" | awk -F/ '{print $NF}')" \
+#         --name "$(aws wafv2 get-web-acl-for-resource --resource-arn "$cf_resource_arn" --region "$CF_ACM_REGION" --query "WebACL.Name" --output text 2>/dev/null || echo "")" \
+#         --scope CLOUDFRONT --region "$CF_ACM_REGION" \
+#         --query "length(WebACL.Rules[?Statement.ManagedRuleGroupStatement!=null])" --output text 2>/dev/null || echo "0")"
+#       if [[ "$managed_count" != "0" ]]; then
+#         add_detail "PASS: WAF contains managed rule group(s) (count=$managed_count)."
+#       else
+#         add_warning "WARN: WAF has no managed rule groups detected (consider AWSManagedRules* baseline)."
+#       fi
+#     else
+#       add_failure "FAIL: No WAF WebACL associated with CloudFront distribution."
+#     fi
+#   else
+#     add_failure "FAIL: Could not build CloudFront resource ARN for WAF association check."
+#   fi
 if [[ "$REQUIRE_WAF_ASSOCIATION" == "true" ]]; then
-  if [[ -n "$cf_resource_arn" ]]; then
-    waf_assoc_arn="$(aws wafv2 get-web-acl-for-resource --resource-arn "$cf_resource_arn" --region "$CF_ACM_REGION" \
-      --query "WebACL.ARN" --output text 2>/dev/null || echo "")"
+    # Get WAF WebACL ARN from CloudFront distribution config
+    waf_assoc_arn="$(aws cloudfront get-distribution --id "$CF_DISTRIBUTION_ID" \
+      --query "Distribution.DistributionConfig.WebACLId" --output text 2>/dev/null || echo "")"
     if [[ -n "$waf_assoc_arn" && "$waf_assoc_arn" != "None" ]]; then
       add_detail "PASS: WAF WebACL is associated with CloudFront."
       if [[ -n "$WAF_WEB_ACL_ARN" && "$waf_assoc_arn" != "$WAF_WEB_ACL_ARN" ]]; then
         add_warning "WARN: Associated WebACL ARN differs from WAF_WEB_ACL_ARN input (expected=$WAF_WEB_ACL_ARN, actual=$waf_assoc_arn)."
       fi
 
+      # Extract WebACL name and ID from ARN for managed rules check
+      # ARN format: arn:aws:wafv2:us-east-1:ACCOUNT:global/webacl/NAME/ID
+      waf_name="$(echo "$waf_assoc_arn" | awk -F/ '{print $(NF-1)}')"
+      waf_id="$(echo "$waf_assoc_arn" | awk -F/ '{print $NF}')"
+
       # Warn if no managed rule groups detected
-      managed_count="$(aws wafv2 get-web-acl --id "$(echo "$waf_assoc_arn" | awk -F/ '{print $NF}')" \
-        --name "$(aws wafv2 get-web-acl-for-resource --resource-arn "$cf_resource_arn" --region "$CF_ACM_REGION" --query "WebACL.Name" --output text 2>/dev/null || echo "")" \
+      managed_count="$(aws wafv2 get-web-acl --id "$waf_id" --name "$waf_name" \
         --scope CLOUDFRONT --region "$CF_ACM_REGION" \
         --query "length(WebACL.Rules[?Statement.ManagedRuleGroupStatement!=null])" --output text 2>/dev/null || echo "0")"
       if [[ "$managed_count" != "0" ]]; then
@@ -271,9 +309,6 @@ if [[ "$REQUIRE_WAF_ASSOCIATION" == "true" ]]; then
     else
       add_failure "FAIL: No WAF WebACL associated with CloudFront distribution."
     fi
-  else
-    add_failure "FAIL: Could not build CloudFront resource ARN for WAF association check."
-  fi
 else
   add_detail "INFO: WAF association requirement disabled (REQUIRE_WAF_ASSOCIATION=false)."
 fi
@@ -291,13 +326,15 @@ fi
 check_alias_record() {
   local type="$1"
   local name_fqdn="${DOMAIN_NAME}."
-  local target="$cf_domain"
+  # local target="$cf_domain" removed to prevent FAIL: Route53 A alias does not point to CloudFront (expected=d1rz2omeikgblx.cloudfront.net, actual=d1rz2omeikgblx.cloudfront.net.).
+  local target="${cf_domain%.}"
 
   # record may be root or with trailing dot
   local found_target
   found_target="$(aws route53 list-resource-record-sets --hosted-zone-id "$ROUTE53_ZONE_ID" \
     --query "ResourceRecordSets[?Type=='$type' && (Name=='$name_fqdn' || Name=='$DOMAIN_NAME')].AliasTarget.DNSName" \
     --output text 2>/dev/null || echo "")"
+  found_target="${found_target%.}"
 
   local found_zone
   found_zone="$(aws route53 list-resource-record-sets --hosted-zone-id "$ROUTE53_ZONE_ID" \
@@ -310,7 +347,8 @@ check_alias_record() {
   fi
 
   # Route53 returns targets with trailing dot
-  if echo "$found_target" | tr '\t' '\n' | grep -qi "^${target}\.?$"; then
+  # if echo "$found_target" | tr '\t' '\n' | grep -qi "^${target}\.?$"; then
+  if echo "$found_target" | tr '\t' '\n' | grep -qi "^${target}$"; then
     add_detail "PASS: Route53 $type alias points to CloudFront ($target)."
   else
     add_failure "FAIL: Route53 $type alias does not point to CloudFront (expected=$target, actual=$found_target)."
