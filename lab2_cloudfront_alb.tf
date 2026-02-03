@@ -141,6 +141,55 @@ resource "aws_cloudfront_distribution" "echobase_cf01" {
   }
 }
 
+# added by Lonnie Hodges on 2026-02-02
+# add CloudFront logging to S3
+resource "aws_cloudwatch_log_delivery_source" "echobase_cf_delivery_source01" {
+  region       = "us-east-1"
+  name         = "${var.project_name}-logs-delivery-source-cf01"
+  log_type     = "ACCESS_LOGS"
+  resource_arn = aws_cloudfront_distribution.echobase_cf01.arn
+}
+
+resource "aws_s3_bucket" "echobase_cf_logs_bucket01" {
+  bucket        = "echobase-cf-logs-${var.project_name}-${data.aws_caller_identity.echobase_self01.account_id}"
+  force_destroy = true
+
+  tags = {
+    Name = "${var.project_name}-cf-logs-bucket01"
+  }
+}
+
+resource "aws_cloudwatch_log_delivery_destination" "echobase_cf_log_destination01" {
+  region = "us-east-1"
+
+  name          = "${var.project_name}-logs-to-s3"
+  output_format = "json"
+
+  delivery_destination_configuration {
+    destination_resource_arn = "${aws_s3_bucket.echobase_cf_logs_bucket01.arn}/prefix"
+  }
+
+  tags = {
+    Name = "${var.project_name}-cf-logs-bucket01-delivery-dest"
+  }
+}
+
+resource "aws_cloudwatch_log_delivery" "echobase_cf_log_delivery01" {
+  region = "us-east-1"
+
+  delivery_source_name     = aws_cloudwatch_log_delivery_source.echobase_cf_delivery_source01.name
+  delivery_destination_arn = aws_cloudwatch_log_delivery_destination.echobase_cf_log_destination01.arn
+
+  s3_delivery_configuration {
+    suffix_path = "/${data.aws_caller_identity.echobase_self01.account_id}/{DistributionId}/{yyyy}/{MM}/{dd}/{HH}"
+  }
+
+  tags = {
+    Name = "${var.project_name}-cf-logs-bucket01-delivery"
+  }
+}
+
+
 # You’ll need this variable:
 # variable "cloudfront_acm_cert_arn" {
 #   description = "ACM certificate ARN in us-east-1 for CloudFront (covers echobase-growl.com and app.echobase-growl.com)."
