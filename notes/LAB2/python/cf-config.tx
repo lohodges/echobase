@@ -1,0 +1,179 @@
+{
+    "ETag": "E23ZP02F085DFQ",
+    "DistributionConfig": {
+        "CallerReference": "terraform-2026012910584532300000000f",
+        "Aliases": {
+            "Quantity": 2,
+            "Items": [
+                "echobase.click",
+                "app.echobase.click"
+            ]
+        },
+        "DefaultRootObject": "",
+        "Origins": {
+            "Quantity": 1,
+            "Items": [
+                {
+                    "Id": "echobase-alb-origin01",
+                    "DomainName": "echobase-alb01-479763487.us-east-2.elb.amazonaws.com",
+                    "OriginPath": "",
+                    "CustomHeaders": {
+                        "Quantity": 1,
+                        "Items": [
+                            {
+                                "HeaderName": "X-echobase-Growl",
+                                "HeaderValue": "56AM7oFmp6e1tFqWrRbcEydJgE21cUYH"
+                            }
+                        ]
+                    },
+                    "CustomOriginConfig": {
+                        "HTTPPort": 80,
+                        "HTTPSPort": 443,
+                        "OriginProtocolPolicy": "https-only",
+                        "OriginSslProtocols": {
+                            "Quantity": 1,
+                            "Items": [
+                                "TLSv1.2"
+                            ]
+                        },
+                        "OriginReadTimeout": 30,
+                        "OriginKeepaliveTimeout": 5
+                    },
+                    "ConnectionAttempts": 3,
+                    "ConnectionTimeout": 10,
+                    "OriginShield": {
+                        "Enabled": false
+                    },
+                    "OriginAccessControlId": ""
+                }
+            ]
+        },
+        "OriginGroups": {
+            "Quantity": 0
+        },
+        "DefaultCacheBehavior": {
+            "TargetOriginId": "echobase-alb-origin01",
+            "TrustedSigners": {
+                "Enabled": false,
+                "Quantity": 0
+            },
+            "TrustedKeyGroups": {
+                "Enabled": false,
+                "Quantity": 0
+            },
+            "ViewerProtocolPolicy": "redirect-to-https",
+            "AllowedMethods": {
+                "Quantity": 7,
+                "Items": [
+                    "HEAD",
+                    "DELETE",
+                    "POST",
+                    "GET",
+                    "OPTIONS",
+                    "PUT",
+                    "PATCH"
+                ],
+                "CachedMethods": {
+                    "Quantity": 2,
+                    "Items": [
+                        "HEAD",
+                        "GET"
+                    ]
+                }
+            },
+            "SmoothStreaming": false,
+            "Compress": false,
+            "LambdaFunctionAssociations": {
+                "Quantity": 0
+            },
+            "FunctionAssociations": {
+                "Quantity": 0
+            },
+            "FieldLevelEncryptionId": "",
+            "CachePolicyId": "4a3ebf4b-c216-450e-b10d-c0a75df42872",
+            "OriginRequestPolicyId": "3a576cf8-3e12-49df-b6c2-9c01dddf8838",
+            "GrpcConfig": {
+                "Enabled": false
+            }
+        },
+        "CacheBehaviors": {
+            "Quantity": 1,
+            "Items": [
+                {
+                    "PathPattern": "/static/*",
+                    "TargetOriginId": "echobase-alb-origin01",
+                    "TrustedSigners": {
+                        "Enabled": false,
+                        "Quantity": 0
+                    },
+                    "TrustedKeyGroups": {
+                        "Enabled": false,
+                        "Quantity": 0
+                    },
+                    "ViewerProtocolPolicy": "redirect-to-https",
+                    "AllowedMethods": {
+                        "Quantity": 3,
+                        "Items": [
+                            "HEAD",
+                            "GET",
+                            "OPTIONS"
+                        ],
+                        "CachedMethods": {
+                            "Quantity": 2,
+                            "Items": [
+                                "HEAD",
+                                "GET"
+                            ]
+                        }
+                    },
+                    "SmoothStreaming": false,
+                    "Compress": false,
+                    "LambdaFunctionAssociations": {
+                        "Quantity": 0
+                    },
+                    "FunctionAssociations": {
+                        "Quantity": 0
+                    },
+                    "FieldLevelEncryptionId": "",
+                    "CachePolicyId": "fdacc9aa-1a2a-4862-87ad-e395f64ab32e",
+                    "OriginRequestPolicyId": "4540c3fe-f150-4fbc-8755-75e9a14a5d3d",
+                    "ResponseHeadersPolicyId": "cb3e7932-5724-4785-a2e0-4994b8273f71",
+                    "GrpcConfig": {
+                        "Enabled": false
+                    }
+                }
+            ]
+        },
+        "CustomErrorResponses": {
+            "Quantity": 0
+        },
+        "Comment": "echobase-cf01",
+        "Logging": {
+            "Enabled": false,
+            "IncludeCookies": false,
+            "Bucket": "",
+            "Prefix": ""
+        },
+        "PriceClass": "PriceClass_All",
+        "Enabled": true,
+        "ViewerCertificate": {
+            "CloudFrontDefaultCertificate": false,
+            "ACMCertificateArn": "arn:aws:acm:us-east-1:746669200167:certificate/2341e92b-8e1f-4c44-b200-42e481bb9e73",
+            "SSLSupportMethod": "sni-only",
+            "MinimumProtocolVersion": "TLSv1.2_2021",
+            "Certificate": "arn:aws:acm:us-east-1:746669200167:certificate/2341e92b-8e1f-4c44-b200-42e481bb9e73",
+            "CertificateSource": "acm"
+        },
+        "Restrictions": {
+            "GeoRestriction": {
+                "RestrictionType": "none",
+                "Quantity": 0
+            }
+        },
+        "WebACLId": "arn:aws:wafv2:us-east-1:746669200167:global/webacl/echobase-cf-waf01/089a186a-a9f7-4532-986c-b554d71766f1",
+        "HttpVersion": "http2",
+        "IsIPV6Enabled": true,
+        "ContinuousDeploymentPolicyId": "",
+        "Staging": false
+    }
+}
