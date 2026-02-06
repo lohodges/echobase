@@ -1,5 +1,5 @@
 variable "aws_region" {
-  description = "AWS Region for the Echobase fleet to patrol."
+  description = "AWS Region for the Liberdade fleet to patrol."
   type        = string
   default     = "sa-east-1"
 }
@@ -13,7 +13,7 @@ variable "aws_region_acm" {
 variable "project_name" {
   description = "Prefix for naming. Students should change from 'chewbacca' to their own."
   type        = string
-  default     = "echobase-saopaolo"
+  default     = "liberdade-saopaolo"
 }
 
 variable "vpc_cidr" {
@@ -50,6 +50,19 @@ variable "ec2_instance_type" {
   description = "EC2 instance size for the app."
   type        = string
   default     = "t2.micro" # free tier eligible (us-east-2 and ap-northeast-3)
+}
+
+variable "db_name" {
+  description = "Initial database name."
+  type        = string
+  default     = "notesappdb" # Students can change
+  #default     = "labdb" # Students can change
+}
+
+variable "db_username" {
+  description = "DB master username (students should use Secrets Manager in 1B/1C)."
+  type        = string
+  default     = "admin" # TODO: student supplies
 }
 
 variable "sns_email_endpoint" {
