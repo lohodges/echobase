@@ -1,7 +1,7 @@
 variable "aws_region" {
-  description = "AWS Region for the Shinjuku fleet to patrol."
+  description = "AWS Region for the Echobase fleet to patrol."
   type        = string
-  default     = "ap-northeast-1"
+  default     = "sa-east-1"
 }
 
 variable "aws_region_acm" {
@@ -13,55 +13,43 @@ variable "aws_region_acm" {
 variable "project_name" {
   description = "Prefix for naming. Students should change from 'chewbacca' to their own."
   type        = string
-  default     = "shinjuku-tokyo"
+  default     = "echobase-saopaolo"
 }
 
 variable "vpc_cidr" {
   description = "VPC CIDR (use 10.x.x.x/xx as instructed)."
   type        = string
-  default     = "10.124.0.0/16" # TODO: student supplies
+  default     = "10.136.0.0/16" # TODO: student supplies
 }
 
 variable "public_subnet_cidrs" {
   description = "Public subnet CIDRs (use 10.x.x.x/xx)."
   type        = list(string)
-  default     = ["10.124.1.0/24", "10.124.2.0/24"] # TODO: student supplies
+  default     = ["10.136.1.0/24", "10.136.2.0/24"] # TODO: student supplies
 }
 
 variable "private_subnet_cidrs" {
   description = "Private subnet CIDRs (use 10.x.x.x/xx)."
   type        = list(string)
-  default     = ["10.124.101.0/24", "10.124.102.0/24"] # TODO: student supplies
+  default     = ["10.136.101.0/24", "10.136.102.0/24"] # TODO: student supplies
 }
 
 variable "azs" {
   description = "Availability Zones list (match count with subnets)."
   type        = list(string)
-  default     = ["ap-northeast-1a", "ap-northeast-1c"] # TODO: student supplies
+  default     = ["sa-east-1a", "sa-east-1b"] # TODO: student supplies
 }
 
 variable "ec2_ami_id" {
   description = "AMI ID for the EC2 app host."
   type        = string
-  default     = "ami-06cce67a5893f85f9" # ap-northeast-1
+  default     = "ami-0f85876b1aff99dde" # sa-east-1
 }
 
 variable "ec2_instance_type" {
   description = "EC2 instance size for the app."
   type        = string
   default     = "t2.micro" # free tier eligible (us-east-2 and ap-northeast-3)
-}
-
-variable "db_engine" {
-  description = "RDS engine."
-  type        = string
-  default     = "mysql"
-}
-
-variable "db_instance_class" {
-  description = "RDS instance class."
-  type        = string
-  default     = "db.t3.micro"
 }
 
 variable "db_name" {
