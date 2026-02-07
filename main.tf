@@ -343,7 +343,7 @@ resource "aws_iam_policy" "policy_ec2_read_secret" {
         "Effect" : "Allow",
         "Action" : ["secretsmanager:GetSecretValue"],
         # "Resource" : "arn:aws:secretsmanager:<REGION>:<ACCOUNT ID>:secret:echobase/rds/mysql*"
-        "Resource" : "arn:aws:secretsmanager:us-east-2:746669200167:secret:echobase/rds/mysql*"
+        "Resource" : "arn:aws:secretsmanager:us-east-2:811651352867:secret:echobase/rds/mysql*"
       }
     ]
   })
