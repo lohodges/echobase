@@ -4,9 +4,6 @@
 locals {
   name_prefix = var.project_name
 
-  # TODO: Students should lock this down after apply using the real secret ARN from outputs/state
-  liberdade_secret_arn_guess = "arn:aws:secretsmanager:${data.aws_region.liberdade_region01.region}:${data.aws_caller_identity.liberdade_self01.account_id}:secret:${local.name_prefix}/rds/mysql*"
-
   # Explanation: This is the roar address — where the galaxy finds your app.
   liberdade_fqdn = var.domain_name
 
@@ -32,9 +29,15 @@ data "aws_caller_identity" "liberdade_self01" {}
 data "aws_region" "liberdade_region01" {}
 # ^^^ added by Lonnie Hodges on 2026-01-17
 
+data "terraform_remote_state" "tokyo" {
+  backend = "local"
+  config = {
+    path = "../tokyo/terraform.tfstate"
+  }
+}
 
 ############################################
-# VPC + Internet Gateway
+# VPC + Internet Gateway + Transit Gateway
 ############################################
 
 # Explanation: Liberdade needs a hyperlane—this VPC is the Millennium Falcon’s flight corridor.
@@ -55,6 +58,26 @@ resource "aws_internet_gateway" "liberdade_igw01" {
   tags = {
     Name = "${local.name_prefix}-igw01"
   }
+}
+
+# Explanation: Liberdade is São Paulo’s Japanese town—local doctors, local compute, remote data.
+resource "aws_ec2_transit_gateway" "liberdade_tgw01" {
+  description = "liberdade-tgw01 (Sao Paulo spoke)"
+  tags        = { Name = "liberdade-tgw01" }
+}
+
+# Explanation: Liberdade accepts the corridor from Shinjuku—permissions are explicit, not assumed.
+resource "aws_ec2_transit_gateway_peering_attachment_accepter" "liberdade_accept_peer01" {
+  transit_gateway_attachment_id = aws_ec2_transit_gateway_peering_attachment.shinjuku_to_liberdade_peer01.id
+  tags                          = { Name = "liberdade-accept-peer01" }
+}
+
+# Explanation: Liberdade attaches to its VPC—compute can now reach Tokyo legally, through the controlled corridor.
+resource "aws_ec2_transit_gateway_vpc_attachment" "liberdade_attach_sp_vpc01" {
+  transit_gateway_id = aws_ec2_transit_gateway.liberdade_tgw01.id
+  vpc_id             = aws_vpc.liberdade_vpc01.id
+  subnet_ids         = [aws_subnet.liberdade_private_subnet01.id, aws_subnet.liberdade_private_subnet02.id]
+  tags               = { Name = "liberdade-attach-sp-vpc01" }
 }
 
 ############################################
@@ -186,41 +209,10 @@ resource "aws_vpc_security_group_ingress_rule" "http" {
   to_port           = 80
 }
 
-# TODO: student ensures outbound allows DB port to RDS SG (or allow all outbound)
-# added by Lonnie Hodges
-resource "aws_vpc_security_group_egress_rule" "out_to_rds" {
-  security_group_id            = aws_security_group.liberdade_ec2_sg01.id
-  referenced_security_group_id = aws_security_group.liberdade_rds_sg01.id
-  ip_protocol                  = "tcp"
-  from_port                    = 3306
-  to_port                      = 3306
-}
-
 resource "aws_vpc_security_group_egress_rule" "out_ec2_all" {
   security_group_id = aws_security_group.liberdade_ec2_sg01.id
   cidr_ipv4         = "0.0.0.0/0"
   ip_protocol       = "-1"
-}
-
-# Explanation: RDS SG is the Rebel vault—only the app server gets a keycard.
-resource "aws_security_group" "liberdade_rds_sg01" {
-  name        = "${local.name_prefix}-rds-sg01"
-  description = "RDS security group"
-  vpc_id      = aws_vpc.liberdade_vpc01.id
-
-  tags = {
-    Name = "${local.name_prefix}-rds-sg01"
-  }
-}
-
-# TODO: student adds inbound MySQL 3306 from aws_security_group.liberdade_ec2_sg01.id
-# added by Lonnie Hodges
-resource "aws_vpc_security_group_ingress_rule" "from_ec2" {
-  security_group_id            = aws_security_group.liberdade_rds_sg01.id
-  referenced_security_group_id = aws_security_group.liberdade_ec2_sg01.id
-  ip_protocol                  = "tcp"
-  from_port                    = 3306
-  to_port                      = 3306
 }
 
 # Explanation: liberdade only opens the hangar door — allow ALB -> EC2 on app port (e.g., 80).
@@ -277,29 +269,6 @@ resource "aws_vpc_security_group_ingress_rule" "https_from_ec2_sg01" {
 ############################################
 # IAM Role + Instance Profile for EC2
 ############################################
-
-# added by Lonnie Hodges
-resource "aws_iam_policy" "policy_ec2_read_secret" {
-  name        = "read_specific_secret"
-  path        = "/"
-  description = "EC2 must read secrets/params during recovery—give it access."
-
-  # Terraform's "jsonencode" function converts a
-  # Terraform expression result to valid JSON syntax.
-  policy = jsonencode({
-    "Version" : "2012-10-17",
-    "Statement" : [
-      {
-        "Sid" : "ReadSpecificSecret",
-        "Effect" : "Allow",
-        "Action" : ["secretsmanager:GetSecretValue"],
-        # "Resource" : "arn:aws:secretsmanager:<REGION>:<ACCOUNT ID>:secret:liberdade/rds/mysql*"
-        "Resource" : "arn:aws:secretsmanager:us-east-2:746669200167:secret:liberdade/rds/mysql*"
-      }
-    ]
-  })
-}
-# added by Lonnie Hodges
 
 # Explanation: Liberdade refuses to carry static keys—this role lets EC2 assume permissions safely.
 resource "aws_iam_role" "liberdade_ec2_role01" {
@@ -370,27 +339,6 @@ resource "aws_iam_policy" "liberdade_leastpriv_read_params01" {
   })
 }
 
-# Explanation: liberdade only opens *this* vault—GetSecretValue for only your secret (not the whole planet).
-resource "aws_iam_policy" "liberdade_leastpriv_read_secret01" {
-  name        = "${local.name_prefix}-lp-secrets-read01"
-  description = "Least-privilege read for the lab DB secret"
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Sid    = "ReadOnlyLabSecret"
-        Effect = "Allow"
-        Action = [
-          "secretsmanager:GetSecretValue",
-          "secretsmanager:DescribeSecret"
-        ]
-        Resource = local.liberdade_secret_arn_guess
-      }
-    ]
-  })
-}
-
 # Explanation: When the Falcon logs scream, this lets liberdade ship logs to CloudWatch without giving away the Death Star plans.
 resource "aws_iam_policy" "liberdade_leastpriv_cwlogs01" {
   name        = "${local.name_prefix}-lp-cwlogs01"
@@ -419,11 +367,6 @@ resource "aws_iam_policy" "liberdade_leastpriv_cwlogs01" {
 resource "aws_iam_role_policy_attachment" "liberdade_attach_lp_params01" {
   role       = aws_iam_role.liberdade_ec2_role01.name
   policy_arn = aws_iam_policy.liberdade_leastpriv_read_params01.arn
-}
-
-resource "aws_iam_role_policy_attachment" "liberdade_attach_lp_secret01" {
-  role       = aws_iam_role.liberdade_ec2_role01.name
-  policy_arn = aws_iam_policy.liberdade_leastpriv_read_secret01.arn
 }
 
 resource "aws_iam_role_policy_attachment" "liberdade_attach_lp_cwlogs01" {
@@ -475,59 +418,6 @@ resource "aws_instance" "liberdade_ec201_private_bonus" {
   tags = {
     Name = "${local.name_prefix}-ec201-private"
   }
-}
-
-############################################
-# Parameter Store (SSM Parameters)
-############################################
-
-# Explanation: Parameter Store is Liberdade’s map—endpoints and config live here for fast recovery.
-resource "aws_ssm_parameter" "liberdade_db_endpoint_param" {
-  name  = "/lab/db/endpoint"
-  type  = "String"
-  value = aws_db_instance.liberdade_rds01.address
-
-  tags = {
-    Name = "${local.name_prefix}-param-db-endpoint"
-  }
-}
-
-# Explanation: Ports are boring, but even Wookiees need to know which door number to kick in.
-resource "aws_ssm_parameter" "liberdade_db_port_param" {
-  name  = "/lab/db/port"
-  type  = "String"
-  value = tostring(aws_db_instance.liberdade_rds01.port)
-
-  tags = {
-    Name = "${local.name_prefix}-param-db-port"
-  }
-}
-
-############################################
-# Secrets Manager (DB Credentials)
-############################################
-
-# Explanation: Secrets Manager is Liberdade’s locked holster—credentials go here, not in code.
-resource "aws_secretsmanager_secret" "liberdade_db_secret01" {
-  name = "${local.name_prefix}/rds/mysql"
-  # added by Lonnie Hodges
-  # When I run terraform destroy, I want to immediately destroy the secret.
-  recovery_window_in_days = 0
-}
-
-
-
-# Explanation: Secret payload—students should align this structure with their app (and support rotation later).
-resource "aws_secretsmanager_secret_version" "liberdade_db_secret_version01" {
-  secret_id = aws_secretsmanager_secret.liberdade_db_secret01.id
-
-  secret_string = jsonencode({
-    username = var.db_username
-    password = data.aws_ssm_parameter.liberdade_db_password_ssm01.value
-    host     = aws_db_instance.liberdade_rds01.address
-    port     = aws_db_instance.liberdade_rds01.port
-    dbname   = var.db_name
-  })
 }
 
 ############################################

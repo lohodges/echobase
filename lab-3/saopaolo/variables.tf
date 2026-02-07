@@ -52,19 +52,6 @@ variable "ec2_instance_type" {
   default     = "t2.micro" # free tier eligible (us-east-2 and ap-northeast-3)
 }
 
-variable "db_name" {
-  description = "Initial database name."
-  type        = string
-  default     = "notesappdb" # Students can change
-  #default     = "labdb" # Students can change
-}
-
-variable "db_username" {
-  description = "DB master username (students should use Secrets Manager in 1B/1C)."
-  type        = string
-  default     = "admin" # TODO: student supplies
-}
-
 variable "sns_email_endpoint" {
   description = "Email for SNS subscription (PagerDuty simulation)."
   type        = string
