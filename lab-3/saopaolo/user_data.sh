@@ -20,8 +20,8 @@ import random
 from datetime import datetime, timezone
 from flask import Flask, request, make_response, jsonify
 
-REGION = os.environ.get("AWS_REGION", "us-east-2")
-SECRET_ID = os.environ.get("SECRET_ID", "liberdade/rds/mysql")
+REGION = os.environ.get("AWS_REGION", "ap-northeast-1")
+SECRET_ID = os.environ.get("SECRET_ID", "shinjuku/rds/mysql")
 
 LOG_GROUP = "/aws/ec2/liberdade-rds-app"
 LOG_STREAM = "liberdade-rds-app"
@@ -163,7 +163,7 @@ After=network.target
 
 [Service]
 WorkingDirectory=/opt/rdsapp
-Environment=SECRET_ID=liberdade/rds/mysql
+Environment=SECRET_ID=shinjuku/rds/mysql
 ExecStart=/usr/bin/python3 /opt/rdsapp/app.py
 Restart=always
 

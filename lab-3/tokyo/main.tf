@@ -81,7 +81,8 @@ resource "aws_ec2_transit_gateway_vpc_attachment" "shinjuku_attach_tokyo_vpc01" 
 resource "aws_ec2_transit_gateway_peering_attachment" "shinjuku_to_liberdade_peer01" {
   transit_gateway_id      = aws_ec2_transit_gateway.shinjuku_tgw01.id
   peer_region             = "sa-east-1"
-  peer_transit_gateway_id = data.terraform_remote_state.saopaolo.outputs.liberdade_tgw01_id
+  #peer_transit_gateway_id = data.terraform_remote_state.saopaolo.outputs.liberdade_tgw01_id
+  peer_transit_gateway_id = ""
   tags                    = { Name = "shinjuku-to-liberdade-peer01" }
 }
 
