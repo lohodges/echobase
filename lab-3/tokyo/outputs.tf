@@ -103,3 +103,11 @@ output "shinjuku_waf_logs_s3_bucket" {
 output "shinjuku_waf_firehose_name" {
   value = var.waf_log_destination == "firehose" ? aws_kinesis_firehose_delivery_stream.shinjuku_waf_firehose01[0].name : null
 }
+
+output "shinjuku_to_liberdade_peer01" {
+  value = aws_ec2_transit_gateway_peering_attachment.shinjuku_to_liberdade_peer01.id
+}
+
+output "shinjuku_tgw01_id" {
+  value = aws_ec2_transit_gateway.shinjuku_tgw01.id
+}
