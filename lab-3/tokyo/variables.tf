@@ -13,7 +13,7 @@ variable "aws_region_acm" {
 variable "project_name" {
   description = "Prefix for naming. Students should change from 'chewbacca' to their own."
   type        = string
-  default     = "shinjuku-tokyo"
+  default     = "shinjuku"
 }
 
 variable "vpc_cidr" {

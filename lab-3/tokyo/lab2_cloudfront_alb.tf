@@ -163,7 +163,8 @@ resource "aws_cloudwatch_log_delivery_destination" "shinjuku_cf_log_destination0
   region = "us-east-1"
 
   name          = "${var.project_name}-logs-to-s3"
-  output_format = "json"
+  output_format = "plain"
+  #output_format = "json"
 
   delivery_destination_configuration {
     destination_resource_arn = "${aws_s3_bucket.shinjuku_cf_logs_bucket01.arn}/prefix"

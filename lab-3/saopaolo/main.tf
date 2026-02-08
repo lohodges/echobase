@@ -137,6 +137,12 @@ resource "aws_nat_gateway" "liberdade_nat01" {
 ############################################
 # Routing (Public + Private Route Tables)
 ############################################
+# Explanation: Liberdade knows the way to Shinjuku—Tokyo CIDR routes go through the TGW corridor.
+resource "aws_route" "liberdade_to_tokyo_route01" {
+  route_table_id         = aws_route_table.liberdade_private_rt01.id
+  destination_cidr_block = "10.124.0.0/16" # Tokyo VPC CIDR (students supply)
+  transit_gateway_id     = aws_ec2_transit_gateway.liberdade_tgw01.id
+}
 
 # Explanation: Public route table = “open lanes” to the galaxy via IGW.
 resource "aws_route_table" "liberdade_public_rt01" {
@@ -269,6 +275,33 @@ resource "aws_vpc_security_group_ingress_rule" "https_from_ec2_sg01" {
 ############################################
 # IAM Role + Instance Profile for EC2
 ############################################
+# added by Lonnie Hodges
+resource "aws_iam_policy" "policy_ec2_read_secret" {
+  name        = "liberdade_read_specific_secret"
+  path        = "/"
+  description = "EC2 must read secrets/params during recovery—give it access."
+
+  # Terraform's "jsonencode" function converts a
+  # Terraform expression result to valid JSON syntax.
+  policy = jsonencode({
+    "Version" : "2012-10-17",
+    "Statement" : [
+      {
+        "Sid" : "ReadSpecificSecret",
+        "Effect" : "Allow",
+        "Action" : ["secretsmanager:GetSecretValue"],
+        # "Resource" : "arn:aws:secretsmanager:<REGION>:<ACCOUNT ID>:secret:shinjuku/rds/mysql*"
+        "Resource" : "arn:aws:secretsmanager:ap-northeast-1:746669200167:secret:shinjuku/rds/mysql*"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "liberdade_ec2_secrets_attach" {
+  role       = aws_iam_role.liberdade_ec2_role01.name
+  policy_arn = aws_iam_policy.policy_ec2_read_secret.arn
+}
+# added by Lonnie Hodges
 
 # Explanation: Liberdade refuses to carry static keys—this role lets EC2 assume permissions safely.
 resource "aws_iam_role" "liberdade_ec2_role01" {
@@ -762,152 +795,6 @@ resource "aws_lb_target_group_attachment" "liberdade_tg_attach01" {
 #   # TODO: students ensure EC2 security group allows inbound from ALB SG on this port (rule above)
 # }
 
-##################################################################
-# ACM Certificate (TLS) for app.echobase.click and echobase.click
-##################################################################
-
-# Explanation: TLS is the diplomatic passport — browsers trust you, and liberdade stops growling at plaintext.
-resource "aws_acm_certificate" "liberdade_acm_cert01" {
-  domain_name       = local.liberdade_app_fqdn
-  validation_method = var.certificate_validation_method
-
-  # TODO: students can add subject_alternative_names like var.domain_name if desired
-  # added by Lonnie Hodges on 2026-01-21
-  subject_alternative_names = [local.liberdade_fqdn]
-
-  tags = {
-    Name = "${var.project_name}-acm-cert01"
-  }
-}
-
-resource "aws_acm_certificate" "liberdade_cf_acm_cert01" {
-  provider          = aws.acm_useast1
-  domain_name       = local.liberdade_app_fqdn
-  validation_method = var.certificate_validation_method
-
-  # TODO: students can add subject_alternative_names like var.domain_name if desired
-  # added by Lonnie Hodges on 2026-01-25
-  subject_alternative_names = [local.liberdade_fqdn]
-
-  tags = {
-    Name = "${var.project_name}-cf-acm-cert01"
-  }
-}
-
-# Explanation: DNS validation records are the “prove you own the planet” ritual — Route53 makes this elegant.
-# TODO: students implement aws_route53_record(s) if they manage DNS in Route53.
-# resource "aws_route53_record" "liberdade_acm_validation" { ... }
-
-resource "aws_route53_record" "liberdade_apex_alias01" {
-  zone_id = var.route53_hosted_zone_id
-  name    = local.liberdade_fqdn
-  type    = "A"
-
-  alias {
-    name                   = aws_cloudfront_distribution.liberdade_cf01.domain_name
-    zone_id                = aws_cloudfront_distribution.liberdade_cf01.hosted_zone_id
-    evaluate_target_health = false
-  }
-}
-
-resource "aws_route53_record" "liberdade_app_alias01" {
-  zone_id = var.route53_hosted_zone_id
-  name    = local.liberdade_app_fqdn
-  type    = "A"
-
-  alias {
-    name                   = aws_cloudfront_distribution.liberdade_cf01.domain_name
-    zone_id                = aws_cloudfront_distribution.liberdade_cf01.hosted_zone_id
-    evaluate_target_health = false
-  }
-}
-
-# added by Lonnie Hodges on 2026-02-02
-resource "aws_route53_record" "liberdade_apex_ipv6_alias01" {
-  zone_id = var.route53_hosted_zone_id
-  name    = local.liberdade_fqdn
-  type    = "AAAA"
-
-  alias {
-    name                   = aws_cloudfront_distribution.liberdade_cf01.domain_name
-    zone_id                = aws_cloudfront_distribution.liberdade_cf01.hosted_zone_id
-    evaluate_target_health = false
-  }
-}
-
-resource "aws_route53_record" "liberdade_app_ipv6_alias01" {
-  zone_id = var.route53_hosted_zone_id
-  name    = local.liberdade_app_fqdn
-  type    = "AAAA"
-
-  alias {
-    name                   = aws_cloudfront_distribution.liberdade_cf01.domain_name
-    zone_id                = aws_cloudfront_distribution.liberdade_cf01.hosted_zone_id
-    evaluate_target_health = false
-  }
-}
-# ^^^ added by Lonnie Hodges on 2026-02-02
-
-data "aws_route53_zone" "liberdade_click" {
-  #zone_id = "Z0828030PI6PCZKRD9SW" for echobase.click
-  name         = var.domain_name
-  private_zone = false
-}
-
-resource "aws_route53_record" "liberdade_acm_validation" {
-  for_each = {
-    for dvo in aws_acm_certificate.liberdade_acm_cert01.domain_validation_options : dvo.domain_name => {
-      name   = dvo.resource_record_name
-      record = dvo.resource_record_value
-      type   = dvo.resource_record_type
-    }
-  }
-
-  allow_overwrite = true
-  name            = each.value.name
-  records         = [each.value.record]
-  ttl             = 60
-  type            = each.value.type
-  zone_id         = data.aws_route53_zone.liberdade_click.zone_id
-}
-
-# Explanation: Once validated, ACM becomes the “green checkmark” — until then, ALB HTTPS won’t work.
-resource "aws_acm_certificate_validation" "liberdade_acm_validation01" {
-  certificate_arn = aws_acm_certificate.liberdade_acm_cert01.arn
-
-  # TODO: if using DNS validation, students must pass validation_record_fqdns
-  validation_record_fqdns = [for record in aws_route53_record.liberdade_acm_validation : record.fqdn]
-}
-
-# added by Lonnie Hodges on 2026-01-25
-# TESTING
-resource "aws_route53_record" "liberdade_cf_acm_validation" {
-  provider = aws.acm_useast1
-  for_each = {
-    for dvo in aws_acm_certificate.liberdade_cf_acm_cert01.domain_validation_options : dvo.domain_name => {
-      name   = dvo.resource_record_name
-      record = dvo.resource_record_value
-      type   = dvo.resource_record_type
-    }
-  }
-
-  allow_overwrite = true
-  name            = each.value.name
-  records         = [each.value.record]
-  ttl             = 60
-  type            = each.value.type
-  zone_id         = data.aws_route53_zone.liberdade_click.zone_id
-}
-
-# Explanation: Once validated, ACM becomes the “green checkmark” — until then, ALB HTTPS won’t work.
-resource "aws_acm_certificate_validation" "liberdade_cf_acm_validation01" {
-  provider        = aws.acm_useast1
-  certificate_arn = aws_acm_certificate.liberdade_cf_acm_cert01.arn
-
-  # TODO: if using DNS validation, students must pass validation_record_fqdns
-  validation_record_fqdns = [for record in aws_route53_record.liberdade_cf_acm_validation : record.fqdn]
-}
-
 ############################################
 # ALB Listeners: HTTP -> HTTPS redirect, HTTPS -> TG
 ############################################
@@ -927,23 +814,6 @@ resource "aws_lb_listener" "liberdade_http_listener01" {
     }
   }
 }
-
-# Explanation: HTTPS listener is the real hangar bay — TLS terminates here, then traffic goes to private targets.
-resource "aws_lb_listener" "liberdade_https_listener01" {
-  load_balancer_arn = aws_lb.liberdade_alb01.arn
-  port              = 443
-  protocol          = "HTTPS"
-  ssl_policy        = "ELBSecurityPolicy-TLS13-1-2-2021-06"
-  certificate_arn   = aws_acm_certificate_validation.liberdade_acm_validation01.certificate_arn
-
-  default_action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.liberdade_tg01.arn
-  }
-
-  depends_on = [aws_acm_certificate_validation.liberdade_acm_validation01]
-}
-# ^^^ added by Lonnie Hodges on 2026-01-19
 
 # added by Lonnie Hodges on 2026-01-20
 ############################################

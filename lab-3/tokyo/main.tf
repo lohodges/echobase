@@ -32,9 +32,15 @@ data "aws_caller_identity" "shinjuku_self01" {}
 data "aws_region" "shinjuku_region01" {}
 # ^^^ added by Lonnie Hodges on 2026-01-17
 
+data "terraform_remote_state" "saopaolo" {
+  backend = "local"
+  config = {
+    path = "../saopaolo/terraform.tfstate"
+  }
+}
 
 ############################################
-# VPC + Internet Gateway
+# VPC + Internet Gateway + Transit Gateway
 ############################################
 
 # Explanation: Shinjuku needs a hyperlane—this VPC is the Millennium Falcon’s flight corridor.
@@ -55,6 +61,34 @@ resource "aws_internet_gateway" "shinjuku_igw01" {
   tags = {
     Name = "${local.name_prefix}-igw01"
   }
+}
+
+# Explanation: Shinjuku Station is the hub—Tokyo is the data authority.
+resource "aws_ec2_transit_gateway" "shinjuku_tgw01" {
+  description = "shinjuku-tgw01 (Tokyo hub)"
+  tags        = { Name = "shinjuku-tgw01" }
+}
+
+# Explanation: Shinjuku connects to the Tokyo VPC—this is the gate to the medical records vault.
+resource "aws_ec2_transit_gateway_vpc_attachment" "shinjuku_attach_tokyo_vpc01" {
+  transit_gateway_id = aws_ec2_transit_gateway.shinjuku_tgw01.id
+  vpc_id             = aws_vpc.shinjuku_vpc01.id
+  subnet_ids         = [aws_subnet.shinjuku_private_subnets[0].id, aws_subnet.shinjuku_private_subnets[1].id]
+  tags               = { Name = "shinjuku-attach-tokyo-vpc01" }
+}
+
+# Explanation: Shinjuku opens a corridor request to Liberdade—compute may travel, data may not.
+resource "aws_ec2_transit_gateway_peering_attachment" "shinjuku_to_liberdade_peer01" {
+  transit_gateway_id      = aws_ec2_transit_gateway.shinjuku_tgw01.id
+  peer_region             = "sa-east-1"
+  peer_transit_gateway_id = data.terraform_remote_state.saopaolo.outputs.liberdade_tgw01_id
+  tags                    = { Name = "shinjuku-to-liberdade-peer01" }
+}
+
+resource "aws_ec2_transit_gateway_route" "shinjuku_to_sp_via_peer01" {
+  destination_cidr_block         = "10.136.0.0/16"
+  transit_gateway_route_table_id = aws_ec2_transit_gateway.shinjuku_tgw01.association_default_route_table_id
+  transit_gateway_attachment_id  = aws_ec2_transit_gateway_peering_attachment.shinjuku_to_liberdade_peer01.id
 }
 
 ############################################
@@ -114,6 +148,12 @@ resource "aws_nat_gateway" "shinjuku_nat01" {
 ############################################
 # Routing (Public + Private Route Tables)
 ############################################
+# Explanation: Shinjuku returns traffic to Liberdade—because doctors need answers, not one-way tunnels.
+resource "aws_route" "shinjuku_to_sp_route01" {
+  route_table_id         = aws_route_table.shinjuku_private_rt01.id
+  destination_cidr_block = "10.136.0.0/16" # Sao Paulo VPC CIDR (students supply)
+  transit_gateway_id     = aws_ec2_transit_gateway.shinjuku_tgw01.id
+}
 
 # Explanation: Public route table = “open lanes” to the galaxy via IGW.
 resource "aws_route_table" "shinjuku_public_rt01" {
@@ -181,7 +221,7 @@ resource "aws_security_group" "shinjuku_ec2_sg01" {
   name        = "${local.name_prefix}-ec2-sg01"
   description = "EC2 app security group"
   vpc_id      = aws_vpc.shinjuku_vpc01.id
-  
+
 
   tags = {
     Name = "${local.name_prefix}-ec2-sg01"
@@ -355,7 +395,7 @@ resource "aws_iam_policy" "policy_ec2_read_secret" {
         "Effect" : "Allow",
         "Action" : ["secretsmanager:GetSecretValue"],
         # "Resource" : "arn:aws:secretsmanager:<REGION>:<ACCOUNT ID>:secret:shinjuku/rds/mysql*"
-        "Resource" : "arn:aws:secretsmanager:us-east-2:746669200167:secret:shinjuku/rds/mysql*"
+        "Resource" : "arn:aws:secretsmanager:ap-northeast-1:746669200167:secret:shinjuku/rds/mysql*"
       }
     ]
   })
