@@ -29,13 +29,6 @@ data "aws_caller_identity" "liberdade_self01" {}
 data "aws_region" "liberdade_region01" {}
 # ^^^ added by Lonnie Hodges on 2026-01-17
 
-data "terraform_remote_state" "tokyo" {
-  backend = "local"
-  config = {
-    path = "../tokyo/terraform.tfstate"
-  }
-}
-
 ############################################
 # VPC + Internet Gateway + Transit Gateway
 ############################################
@@ -60,23 +53,11 @@ resource "aws_internet_gateway" "liberdade_igw01" {
   }
 }
 
+
 # Explanation: Liberdade is São Paulo’s Japanese town—local doctors, local compute, remote data.
 resource "aws_ec2_transit_gateway" "liberdade_tgw01" {
   description = "liberdade-tgw01 (Sao Paulo spoke)"
   tags        = { Name = "liberdade-tgw01" }
-}
-
-# Explanation: Liberdade accepts the corridor from Shinjuku—permissions are explicit, not assumed.
-resource "aws_ec2_transit_gateway_peering_attachment_accepter" "liberdade_accept_peer01" {
-  transit_gateway_attachment_id = data.terraform_remote_state.tokyo.outputs.shinjuku_to_liberdade_peer01
-  #transit_gateway_attachment_id = aws_ec2_transit_gateway_peering_attachment.shinjuku_to_liberdade_peer01.id
-  tags = { Name = "liberdade-accept-peer01" }
-}
-
-resource "aws_ec2_transit_gateway_route" "liberdade_to_tokyo_via_peer01" {
-  destination_cidr_block         = "10.124.0.0/16"
-  transit_gateway_route_table_id = aws_ec2_transit_gateway.liberdade_tgw01.association_default_route_table_id
-  transit_gateway_attachment_id  = aws_ec2_transit_gateway_peering_attachment_accepter.liberdade_accept_peer01.id
 }
 
 # Explanation: Liberdade attaches to its VPC—compute can now reach Tokyo legally, through the controlled corridor.

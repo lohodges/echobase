@@ -32,13 +32,6 @@ data "aws_caller_identity" "shinjuku_self01" {}
 data "aws_region" "shinjuku_region01" {}
 # ^^^ added by Lonnie Hodges on 2026-01-17
 
-data "terraform_remote_state" "saopaolo" {
-  backend = "local"
-  config = {
-    path = "../saopaolo/terraform.tfstate"
-  }
-}
-
 ############################################
 # VPC + Internet Gateway + Transit Gateway
 ############################################
@@ -75,21 +68,6 @@ resource "aws_ec2_transit_gateway_vpc_attachment" "shinjuku_attach_tokyo_vpc01" 
   vpc_id             = aws_vpc.shinjuku_vpc01.id
   subnet_ids         = [aws_subnet.shinjuku_private_subnets[0].id, aws_subnet.shinjuku_private_subnets[1].id]
   tags               = { Name = "shinjuku-attach-tokyo-vpc01" }
-}
-
-# Explanation: Shinjuku opens a corridor request to Liberdade—compute may travel, data may not.
-resource "aws_ec2_transit_gateway_peering_attachment" "shinjuku_to_liberdade_peer01" {
-  transit_gateway_id      = aws_ec2_transit_gateway.shinjuku_tgw01.id
-  peer_region             = "sa-east-1"
-  #peer_transit_gateway_id = data.terraform_remote_state.saopaolo.outputs.liberdade_tgw01_id
-  peer_transit_gateway_id = ""
-  tags                    = { Name = "shinjuku-to-liberdade-peer01" }
-}
-
-resource "aws_ec2_transit_gateway_route" "shinjuku_to_sp_via_peer01" {
-  destination_cidr_block         = "10.136.0.0/16"
-  transit_gateway_route_table_id = aws_ec2_transit_gateway.shinjuku_tgw01.association_default_route_table_id
-  transit_gateway_attachment_id  = aws_ec2_transit_gateway_peering_attachment.shinjuku_to_liberdade_peer01.id
 }
 
 ############################################
