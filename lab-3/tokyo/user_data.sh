@@ -20,7 +20,7 @@ import random
 from datetime import datetime, timezone
 from flask import Flask, request, make_response, jsonify
 
-REGION = os.environ.get("AWS_REGION", "us-east-2")
+REGION = os.environ.get("AWS_REGION", "ap-northeast-1")
 SECRET_ID = os.environ.get("SECRET_ID", "shinjuku/rds/mysql")
 
 LOG_GROUP = "/aws/ec2/shinjuku-rds-app"

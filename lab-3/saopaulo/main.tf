@@ -278,7 +278,7 @@ resource "aws_iam_policy" "policy_ec2_read_secret" {
         "Effect" : "Allow",
         "Action" : ["secretsmanager:GetSecretValue"],
         # "Resource" : "arn:aws:secretsmanager:<REGION>:<ACCOUNT ID>:secret:shinjuku/rds/mysql*"
-        "Resource" : "arn:aws:secretsmanager:ap-northeast-1:746669200167:secret:shinjuku/rds/mysql*"
+        "Resource" : "arn:aws:secretsmanager:sa-east-1:746669200167:secret:shinjuku/rds/mysql*"
       }
     ]
   })
