@@ -193,8 +193,8 @@ variable "flow_logs_prefix" {
 variable "waf_log_destination" {
   description = "Choose ONE destination per WebACL: cloudwatch | s3 | firehose"
   type        = string
-  default     = "cloudwatch"
-  #default = "s3"
+  #default     = "cloudwatch"
+  default = "s3"
   #default = "firehose"
 }
 
