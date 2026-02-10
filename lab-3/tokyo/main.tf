@@ -1535,3 +1535,36 @@ resource "aws_kinesis_firehose_delivery_stream" "shinjuku_waf_firehose01" {
 #   depends_on = [aws_wafv2_web_acl.shinjuku_waf01]
 # }
 # ^^^ added by Lonnie Hodges on 2026-01-21
+
+# added by Lonnie Hodges on 2026-02-09
+############################################
+# S3 bucket for CLoudTrail
+############################################
+
+# Explanation: This bucket is shinjuku's log vault—every visitor to the ALB leaves footprints here.
+resource "aws_s3_bucket" "shinjuku_cloudtrail_logs_bucket01" {
+  count = var.enable_cloudtrail_logs ? 1 : 0
+
+  bucket = "${var.project_name}-cloudtrail-logs-${data.aws_caller_identity.shinjuku_self01.account_id}"
+
+  force_destroy = true
+
+  tags = {
+    Name = "${var.project_name}-cloudtrail-logs-bucket01"
+  }
+}
+
+# Explanation: Block public access—shinjuku does not publish the ship’s black box to the galaxy.
+resource "aws_s3_bucket_public_access_block" "shinjuku_cloudtrail_logs_pab01" {
+  count = var.enable_cloudtrail_logs ? 1 : 0
+
+  bucket                  = aws_s3_bucket.shinjuku_cloudtrail_logs_bucket01[0].id
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+############################################
+# CloudTrail
+############################################

@@ -165,6 +165,12 @@ variable "alb_access_logs_prefix" {
   default     = "alb-access-logs"
 }
 
+variable "enable_cloudtrail_logs" {
+  description = "Enable CloudTrail management events logging to S3."
+  type        = bool
+  default     = true
+}
+
 # added by Lonnie Hodges on 2026-01-21 (1c_bonus-E.md)
 variable "waf_log_destination" {
   description = "Choose ONE destination per WebACL: cloudwatch | s3 | firehose"

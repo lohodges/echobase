@@ -1,0 +1,44 @@
+[
+    {
+        "DestinationCidrBlock": "10.124.0.0/16",
+        "GatewayId": "local",
+        "Origin": "CreateRouteTable",
+        "State": "active"
+    },
+    {
+        "DestinationCidrBlock": "10.124.0.0/16",
+        "GatewayId": "local",
+        "Origin": "CreateRouteTable",
+        "State": "active"
+    },
+    {
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "GatewayId": "igw-0582812627d2eb393",
+        "Origin": "CreateRoute",
+        "State": "active"
+    },
+    {
+        "DestinationCidrBlock": "10.124.0.0/16",
+        "GatewayId": "local",
+        "Origin": "CreateRouteTable",
+        "State": "active"
+    },
+    {
+        "DestinationCidrBlock": "10.136.0.0/16",
+        "TransitGatewayId": "tgw-03610cef2749c7c2a",
+        "Origin": "CreateRoute",
+        "State": "active"
+    },
+    {
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "NatGatewayId": "nat-0538bcb5aa10c1bd0",
+        "Origin": "CreateRoute",
+        "State": "active"
+    },
+    {
+        "DestinationPrefixListId": "pl-61a54008",
+        "GatewayId": "vpce-09b86e88f4f7296dd",
+        "Origin": "CreateRoute",
+        "State": "active"
+    }
+]
