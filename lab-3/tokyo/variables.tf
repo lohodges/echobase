@@ -171,6 +171,24 @@ variable "enable_cloudtrail_logs" {
   default     = true
 }
 
+variable "cloudtrail_logs_prefix" {
+  description = "S3 prefix for CloudTrail logs."
+  type        = string
+  default     = "cloudtrail-logs"
+}
+
+variable "enable_flow_logs" {
+  description = "Enable VPC Flow logs."
+  type        = bool
+  default     = true
+}
+
+variable "flow_logs_prefix" {
+  description = "prefix for Flow logs."
+  type        = string
+  default     = "flow-logs"
+}
+
 # added by Lonnie Hodges on 2026-01-21 (1c_bonus-E.md)
 variable "waf_log_destination" {
   description = "Choose ONE destination per WebACL: cloudwatch | s3 | firehose"

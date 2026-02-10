@@ -1565,6 +1565,174 @@ resource "aws_s3_bucket_public_access_block" "shinjuku_cloudtrail_logs_pab01" {
   restrict_public_buckets = true
 }
 
+# Explanation: Bucket ownership controls prevent log delivery chaos—shinjuku likes clean chain-of-custody.
+resource "aws_s3_bucket_ownership_controls" "shinjuku_cloudtrail_logs_owner01" {
+  count = var.enable_cloudtrail_logs ? 1 : 0
+
+  bucket = aws_s3_bucket.shinjuku_cloudtrail_logs_bucket01[0].id
+  rule {
+    object_ownership = "BucketOwnerPreferred"
+  }
+}
+
+# Explanation: TLS-only—shinjuku growls at plaintext and throws it out an airlock.
+resource "aws_s3_bucket_policy" "shinjuku_cloudtrail_logs_policy01" {
+  count = var.enable_cloudtrail_logs ? 1 : 0
+
+  bucket = aws_s3_bucket.shinjuku_cloudtrail_logs_bucket01[0].id
+
+  # NOTE: This is a skeleton. Students may need to adjust for region/account specifics.
+  policy = jsonencode({
+    "Version" : "2012-10-17",
+    "Statement" : [
+      {
+        "Sid" : "AWSCloudTrailAclCheck20150319",
+        "Effect" : "Allow",
+        "Principal" : {
+          "Service" : "cloudtrail.amazonaws.com"
+        },
+        "Action" : "s3:GetBucketAcl",
+        "Resource" : "arn:aws:s3:::shinjuku-cloudtrail-logs-${data.aws_caller_identity.shinjuku_self01.account_id}",
+        "Condition" : {
+          "StringEquals" : {
+            "AWS:SourceArn" : "arn:aws:cloudtrail:${var.aws_region}:${data.aws_caller_identity.shinjuku_self01.account_id}:trail/management-events"
+          }
+        }
+      },
+      {
+        "Sid" : "AWSCloudTrailWrite",
+        "Effect" : "Allow",
+        "Principal" : {
+          "Service" : "cloudtrail.amazonaws.com"
+        },
+        "Action" : "s3:PutObject",
+        "Resource" : "arn:aws:s3:::shinjuku-cloudtrail-logs-${data.aws_caller_identity.shinjuku_self01.account_id}/${var.cloudtrail_logs_prefix}/AWSLogs/${data.aws_caller_identity.shinjuku_self01.account_id}/*",
+        "Condition" : {
+          "StringEquals" : {
+            "AWS:SourceArn" : "arn:aws:cloudtrail:${var.aws_region}:${data.aws_caller_identity.shinjuku_self01.account_id}:trail/management-events",
+            "s3:x-amz-acl" : "bucket-owner-full-control"
+          }
+        }
+      }
+    ]
+  })
+}
+
 ############################################
 # CloudTrail
 ############################################
+resource "aws_cloudtrail" "shinjuku_cloudtrail01" {
+  depends_on = [aws_s3_bucket_policy.shinjuku_cloudtrail_logs_policy01]
+
+  name                          = "management-events"
+  s3_bucket_name                = aws_s3_bucket.shinjuku_cloudtrail_logs_bucket01[0].id
+  s3_key_prefix                 = "cloudtrail-logs"
+  include_global_service_events = true
+  enable_logging                = true
+  is_multi_region_trail         = true
+}
+
+# added by Lonnie Hodges on 2026-02-09
+############################################
+# Flow Log
+############################################
+resource "aws_flow_log" "shinjuku_flowlog01" {
+  log_destination      = aws_s3_bucket.shinjuku_flow_logs_bucket01[0].arn
+  log_destination_type = "s3"
+  log_format           = "$${version} $${resource-type} $${account-id} $${tgw-id} $${tgw-attachment-id} $${tgw-src-vpc-account-id} $${tgw-dst-vpc-account-id} $${tgw-src-vpc-id} $${tgw-dst-vpc-id} $${tgw-pair-attachment-id} $${srcaddr} $${dstaddr} $${srcport} $${dstport} $${protocol} $${packets} $${bytes} $${start} $${end} $${log-status} $${flow-direction}"
+  traffic_type         = "ALL"
+  transit_gateway_id   = aws_ec2_transit_gateway.shinjuku_tgw01.id
+  max_aggregation_interval = 60
+
+  destination_options {
+    file_format        = "plain-text"
+    per_hour_partition = true
+  }
+}
+
+############################################
+# S3 bucket for Flow Log
+############################################
+# Explanation: This bucket is shinjuku's log vault—every visitor to the ALB leaves footprints here.
+resource "aws_s3_bucket" "shinjuku_flow_logs_bucket01" {
+  count = var.enable_flow_logs ? 1 : 0
+
+  bucket = "${var.project_name}-flow-logs-${data.aws_caller_identity.shinjuku_self01.account_id}"
+
+  force_destroy = true
+
+  tags = {
+    Name = "${var.project_name}-flow-logs-bucket01"
+  }
+}
+
+# Explanation: Block public access—shinjuku does not publish the ship’s black box to the galaxy.
+resource "aws_s3_bucket_public_access_block" "shinjuku_flow_logs_pab01" {
+  count = var.enable_flow_logs ? 1 : 0
+
+  bucket                  = aws_s3_bucket.shinjuku_flow_logs_bucket01[0].id
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+# Explanation: Bucket ownership controls prevent log delivery chaos—shinjuku likes clean chain-of-custody.
+resource "aws_s3_bucket_ownership_controls" "shinjuku_flow_logs_owner01" {
+  count = var.enable_flow_logs ? 1 : 0
+
+  bucket = aws_s3_bucket.shinjuku_flow_logs_bucket01[0].id
+  rule {
+    object_ownership = "BucketOwnerPreferred"
+  }
+}
+
+# Explanation: TLS-only—shinjuku growls at plaintext and throws it out an airlock.
+resource "aws_s3_bucket_policy" "shinjuku_flow_logs_policy01" {
+  count = var.enable_flow_logs ? 1 : 0
+
+  bucket = aws_s3_bucket.shinjuku_flow_logs_bucket01[0].id
+
+  # NOTE: This is a skeleton. Students may need to adjust for region/account specifics.
+  policy = jsonencode({
+    "Version" : "2012-10-17",
+    "Id" : "AWSLogDeliveryWrite20150319",
+    "Statement" : [
+      {
+        "Sid" : "AWSLogDeliveryWrite1",
+        "Effect" : "Allow",
+        "Principal" : {
+          "Service" : "delivery.logs.amazonaws.com"
+        },
+        "Action" : "s3:PutObject",
+        "Resource" : "${aws_s3_bucket.shinjuku_flow_logs_bucket01[0].arn}/AWSLogs/${data.aws_caller_identity.shinjuku_self01.account_id}/*",
+        "Condition" : {
+          "StringEquals" : {
+            "s3:x-amz-acl" : "bucket-owner-full-control",
+            "aws:SourceAccount" : "${data.aws_caller_identity.shinjuku_self01.account_id}"
+          },
+          "ArnLike" : {
+            "aws:SourceArn" : "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.shinjuku_self01.account_id}:*"
+          }
+        }
+      },
+      {
+        "Sid" : "AWSLogDeliveryAclCheck1",
+        "Effect" : "Allow",
+        "Principal" : {
+          "Service" : "delivery.logs.amazonaws.com"
+        },
+        "Action" : "s3:GetBucketAcl",
+        "Resource" : "${aws_s3_bucket.shinjuku_flow_logs_bucket01[0].arn}",
+        "Condition" : {
+          "StringEquals" : {
+            "aws:SourceAccount" : "${data.aws_caller_identity.shinjuku_self01.account_id}"
+          },
+          "ArnLike" : {
+            "aws:SourceArn" : "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.shinjuku_self01.account_id}:*"
+          }
+        }
+      }
+    ]
+  })
+}
