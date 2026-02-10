@@ -1,0 +1,160 @@
+Found 7 objects. Analyzing latest 3:
+  - s3://shinjuku-cf-logs-shinjuku-746669200167/CloudFront/746669200167/E3V3I9IR5Z0TV8/2026/02/10/11/E3V3I9IR5Z0TV8.2026-02-10-11.f4c4992b.gz
+  - s3://shinjuku-cf-logs-shinjuku-746669200167/CloudFront/746669200167/E3V3I9IR5Z0TV8/2026/02/10/11/E3V3I9IR5Z0TV8.2026-02-10-11.fa628101.gz
+  - s3://shinjuku-cf-logs-shinjuku-746669200167/CloudFront/746669200167/E3V3I9IR5Z0TV8/2026/02/10/12/E3V3I9IR5Z0TV8.2026-02-10-12.ecf53e1e.gz
+
+=== CloudFront Cache Outcome Report (Standard Logs) ===
+Core total (Hit/Miss/RefreshHit): 0
+All counted lines/notes:          200
+
+Core outcomes:
+  Hit               0   (0.0% of core)
+  Miss              0   (0.0% of core)
+  RefreshHit        0   (0.0% of core)
+
+Other outcomes / parsing notes (top 20):
+  Other:(missing_fields_header)      200
+
+Interpretation (ops):
+  • High Hit% usually means lower latency & lower origin load.
+  • High Miss% suggests caching policy mismatch, uncacheable headers,
+    query-string/cookie variance, or origin Cache-Control behavior.
+  • RefreshHit means CloudFront revalidated with origin and served cached content (often good).
+=======================================================
+
+Found 10 objects. Analyzing latest 3:
+  - s3://shinjuku-cf-logs-shinjuku-746669200167/CloudFront/746669200167/E3V3I9IR5Z0TV8/2026/02/10/12/E3V3I9IR5Z0TV8.2026-02-10-12.d412ec22.gz
+  - s3://shinjuku-cf-logs-shinjuku-746669200167/CloudFront/746669200167/E3V3I9IR5Z0TV8/2026/02/10/12/E3V3I9IR5Z0TV8.2026-02-10-12.e0e3a796.gz
+  - s3://shinjuku-cf-logs-shinjuku-746669200167/CloudFront/746669200167/E3V3I9IR5Z0TV8/2026/02/10/12/E3V3I9IR5Z0TV8.2026-02-10-12.ecf53e1e.gz
+
+=== CloudFront Cache Outcome Report (Standard Logs) ===
+Core total (Hit/Miss/RefreshHit): 0
+All counted lines/notes:          11
+
+Core outcomes:
+  Hit               0   (0.0% of core)
+  Miss              0   (0.0% of core)
+  RefreshHit        0   (0.0% of core)
+
+Other outcomes / parsing notes (top 20):
+  Other:(missing_fields_header)       11
+
+Interpretation (ops):
+  • High Hit% usually means lower latency & lower origin load.
+  • High Miss% suggests caching policy mismatch, uncacheable headers,
+    query-string/cookie variance, or origin Cache-Control behavior.
+  • RefreshHit means CloudFront revalidated with origin and served cached content (often good).
+=======================================================
+
+Found 10 objects. Analyzing latest 3:
+  - s3://shinjuku-cf-logs-shinjuku-746669200167/CloudFront/746669200167/E3V3I9IR5Z0TV8/2026/02/10/12/E3V3I9IR5Z0TV8.2026-02-10-12.d412ec22.gz
+  - s3://shinjuku-cf-logs-shinjuku-746669200167/CloudFront/746669200167/E3V3I9IR5Z0TV8/2026/02/10/12/E3V3I9IR5Z0TV8.2026-02-10-12.e0e3a796.gz
+  - s3://shinjuku-cf-logs-shinjuku-746669200167/CloudFront/746669200167/E3V3I9IR5Z0TV8/2026/02/10/12/E3V3I9IR5Z0TV8.2026-02-10-12.ecf53e1e.gz
+
+=== CloudFront Cache Outcome Report (Standard Logs) ===
+Core total (Hit/Miss/RefreshHit): 1
+All counted lines/notes:          11
+
+Core outcomes:
+  Hit               0   (0.0% of core)
+  Miss              1   (100.0% of core)
+  RefreshHit        0   (0.0% of core)
+
+Other outcomes / parsing notes (top 20):
+  Other:Redirect                      4
+  Other:(missing_outcome)             3
+  Other:Error                         3
+
+Interpretation (ops):
+  • High Hit% usually means lower latency & lower origin load.
+  • High Miss% suggests caching policy mismatch, uncacheable headers,
+    query-string/cookie variance, or origin Cache-Control behavior.
+  • RefreshHit means CloudFront revalidated with origin and served cached content (often good).
+=======================================================
+
+Found 10 objects. Analyzing latest 3:
+  - s3://shinjuku-cf-logs-shinjuku-746669200167/CloudFront/746669200167/E3V3I9IR5Z0TV8/2026/02/10/12/E3V3I9IR5Z0TV8.2026-02-10-12.d412ec22.gz
+  - s3://shinjuku-cf-logs-shinjuku-746669200167/CloudFront/746669200167/E3V3I9IR5Z0TV8/2026/02/10/12/E3V3I9IR5Z0TV8.2026-02-10-12.e0e3a796.gz
+  - s3://shinjuku-cf-logs-shinjuku-746669200167/CloudFront/746669200167/E3V3I9IR5Z0TV8/2026/02/10/12/E3V3I9IR5Z0TV8.2026-02-10-12.ecf53e1e.gz
+
+=== CloudFront Cache Outcome Report (Standard Logs) ===
+Core total (Hit/Miss/RefreshHit): 1
+All counted lines/notes:          11
+
+Core outcomes:
+  Hit               0   (0.0% of core)
+  Miss              1   (100.0% of core)
+  RefreshHit        0   (0.0% of core)
+
+Other outcomes / parsing notes (top 20):
+  Other:Redirect                      4
+  Other:(missing_outcome)             3
+  Other:Error                         3
+
+Interpretation (ops):
+  • High Hit% usually means lower latency & lower origin load.
+  • High Miss% suggests caching policy mismatch, uncacheable headers,
+    query-string/cookie variance, or origin Cache-Control behavior.
+  • RefreshHit means CloudFront revalidated with origin and served cached content (often good).
+=======================================================
+
+Found 11 objects. Analyzing latest 3:
+  - s3://shinjuku-cf-logs-shinjuku-746669200167/CloudFront/746669200167/E3V3I9IR5Z0TV8/2026/02/10/12/E3V3I9IR5Z0TV8.2026-02-10-12.dc2d17bd.gz
+  - s3://shinjuku-cf-logs-shinjuku-746669200167/CloudFront/746669200167/E3V3I9IR5Z0TV8/2026/02/10/12/E3V3I9IR5Z0TV8.2026-02-10-12.e0e3a796.gz
+  - s3://shinjuku-cf-logs-shinjuku-746669200167/CloudFront/746669200167/E3V3I9IR5Z0TV8/2026/02/10/12/E3V3I9IR5Z0TV8.2026-02-10-12.ecf53e1e.gz
+
+=== CloudFront Cache Outcome Report (Standard Logs) ===
+Core total (Hit/Miss/RefreshHit): 21
+All counted lines/notes:          45
+
+Core outcomes:
+  Hit               0   (0.0% of core)
+  Miss             21   (100.0% of core)
+  RefreshHit        0   (0.0% of core)
+
+Other outcomes / parsing notes (top 20):
+  Other:Error                        14
+  Other:Redirect                      7
+  Other:(missing_outcome)             3
+
+Interpretation (ops):
+  • High Hit% usually means lower latency & lower origin load.
+  • High Miss% suggests caching policy mismatch, uncacheable headers,
+    query-string/cookie variance, or origin Cache-Control behavior.
+  • RefreshHit means CloudFront revalidated with origin and served cached content (often good).
+=======================================================
+
+Found 11 objects. Analyzing latest 11:
+  - s3://shinjuku-cf-logs-shinjuku-746669200167/CloudFront/746669200167/E3V3I9IR5Z0TV8/2026/02/10/11/E3V3I9IR5Z0TV8.2026-02-10-11.29b5b62b.gz
+  - s3://shinjuku-cf-logs-shinjuku-746669200167/CloudFront/746669200167/E3V3I9IR5Z0TV8/2026/02/10/11/E3V3I9IR5Z0TV8.2026-02-10-11.6e23b53f.gz
+  - s3://shinjuku-cf-logs-shinjuku-746669200167/CloudFront/746669200167/E3V3I9IR5Z0TV8/2026/02/10/11/E3V3I9IR5Z0TV8.2026-02-10-11.860e04df.gz
+  - s3://shinjuku-cf-logs-shinjuku-746669200167/CloudFront/746669200167/E3V3I9IR5Z0TV8/2026/02/10/11/E3V3I9IR5Z0TV8.2026-02-10-11.e95bf7ed.gz
+  - s3://shinjuku-cf-logs-shinjuku-746669200167/CloudFront/746669200167/E3V3I9IR5Z0TV8/2026/02/10/11/E3V3I9IR5Z0TV8.2026-02-10-11.f4c4992b.gz
+  - s3://shinjuku-cf-logs-shinjuku-746669200167/CloudFront/746669200167/E3V3I9IR5Z0TV8/2026/02/10/11/E3V3I9IR5Z0TV8.2026-02-10-11.fa628101.gz
+  - s3://shinjuku-cf-logs-shinjuku-746669200167/CloudFront/746669200167/E3V3I9IR5Z0TV8/2026/02/10/12/E3V3I9IR5Z0TV8.2026-02-10-12.6dba2daa.gz
+  - s3://shinjuku-cf-logs-shinjuku-746669200167/CloudFront/746669200167/E3V3I9IR5Z0TV8/2026/02/10/12/E3V3I9IR5Z0TV8.2026-02-10-12.d412ec22.gz
+  - s3://shinjuku-cf-logs-shinjuku-746669200167/CloudFront/746669200167/E3V3I9IR5Z0TV8/2026/02/10/12/E3V3I9IR5Z0TV8.2026-02-10-12.dc2d17bd.gz
+  - s3://shinjuku-cf-logs-shinjuku-746669200167/CloudFront/746669200167/E3V3I9IR5Z0TV8/2026/02/10/12/E3V3I9IR5Z0TV8.2026-02-10-12.e0e3a796.gz
+  - s3://shinjuku-cf-logs-shinjuku-746669200167/CloudFront/746669200167/E3V3I9IR5Z0TV8/2026/02/10/12/E3V3I9IR5Z0TV8.2026-02-10-12.ecf53e1e.gz
+
+=== CloudFront Cache Outcome Report (Standard Logs) ===
+Core total (Hit/Miss/RefreshHit): 56
+All counted lines/notes:          463
+
+Core outcomes:
+  Hit               3   (5.4% of core)
+  Miss             53   (94.6% of core)
+  RefreshHit        0   (0.0% of core)
+
+Other outcomes / parsing notes (top 20):
+  Other:Error                       382
+  Other:Redirect                     14
+  Other:(missing_outcome)            11
+
+Interpretation (ops):
+  • High Hit% usually means lower latency & lower origin load.
+  • High Miss% suggests caching policy mismatch, uncacheable headers,
+    query-string/cookie variance, or origin Cache-Control behavior.
+  • RefreshHit means CloudFront revalidated with origin and served cached content (often good).
+=======================================================
+
