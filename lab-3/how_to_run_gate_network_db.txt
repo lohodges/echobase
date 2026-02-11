@@ -1,0 +1,15 @@
+Basic: verify RDS isn’t public + SG-to-SG rule exists
+
+chmod +x gate_network_db.sh
+REGION=us-east-1 INSTANCE_ID=i-0123456789abcdef0 DB_ID=mydb01 ./gate_network_db.sh
+
+Strict: also verify DB subnets are private (no IGW route)
+
+CHECK_PRIVATE_SUBNETS=true REGION=us-east-1 INSTANCE_ID=i-0123456789abcdef0 DB_ID=mydb01 ./gate_network_db.sh
+
+  If endpoint port discovery fails, override it
+
+  DB_PORT=5432 REGION=us-east-1 INSTANCE_ID=i-0123456789abcdef0 DB_ID=mydb01 ./gate_network_db.sh
+  
+
+

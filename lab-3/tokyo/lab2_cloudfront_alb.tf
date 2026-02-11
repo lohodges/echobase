@@ -159,6 +159,59 @@ resource "aws_s3_bucket" "shinjuku_cf_logs_bucket01" {
   }
 }
 
+# Explanation: Block public access—shinjuku does not publish CloudFront logs to the galaxy.
+resource "aws_s3_bucket_public_access_block" "shinjuku_cf_logs_pab01" {
+  bucket                  = aws_s3_bucket.shinjuku_cf_logs_bucket01.id
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+# Explanation: Bucket ownership controls prevent log delivery chaos—shinjuku likes clean chain-of-custody.
+resource "aws_s3_bucket_ownership_controls" "shinjuku_cf_logs_owner01" {
+  bucket = aws_s3_bucket.shinjuku_cf_logs_bucket01.id
+  rule {
+    object_ownership = "BucketOwnerPreferred"
+  }
+}
+
+# Explanation: Allow the CloudWatch vended-logs delivery service to write CloudFront access logs.
+resource "aws_s3_bucket_policy" "shinjuku_cf_logs_policy01" {
+  bucket = aws_s3_bucket.shinjuku_cf_logs_bucket01.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid       = "AWSLogDeliveryWrite"
+        Effect    = "Allow"
+        Principal = { Service = "delivery.logs.amazonaws.com" }
+        Action    = "s3:PutObject"
+        Resource  = "${aws_s3_bucket.shinjuku_cf_logs_bucket01.arn}/*"
+        Condition = {
+          StringEquals = {
+            "s3:x-amz-acl"      = "bucket-owner-full-control"
+            "aws:SourceAccount" = data.aws_caller_identity.shinjuku_self01.account_id
+          }
+        }
+      },
+      {
+        Sid       = "AWSLogDeliveryAclCheck"
+        Effect    = "Allow"
+        Principal = { Service = "delivery.logs.amazonaws.com" }
+        Action    = "s3:GetBucketAcl"
+        Resource  = aws_s3_bucket.shinjuku_cf_logs_bucket01.arn
+        Condition = {
+          StringEquals = {
+            "aws:SourceAccount" = data.aws_caller_identity.shinjuku_self01.account_id
+          }
+        }
+      }
+    ]
+  })
+}
+
 resource "aws_cloudwatch_log_delivery_destination" "shinjuku_cf_log_destination01" {
   region = "us-east-1"
 
@@ -189,7 +242,6 @@ resource "aws_cloudwatch_log_delivery" "shinjuku_cf_log_delivery01" {
     Name = "${var.project_name}-cf-logs-bucket01-delivery"
   }
 }
-
 
 # You’ll need this variable:
 # variable "cloudfront_acm_cert_arn" {

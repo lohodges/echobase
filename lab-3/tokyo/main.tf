@@ -485,7 +485,8 @@ resource "aws_iam_policy" "shinjuku_leastpriv_cwlogs01" {
         Action = [
           "logs:CreateLogStream",
           "logs:PutLogEvents",
-          "logs:DescribeLogStreams"
+          "logs:DescribeLogStreams",
+          "logs:DescribeDeliverySources"
         ]
         Resource = [
           "${aws_cloudwatch_log_group.shinjuku_log_group01.arn}:*"
@@ -1637,11 +1638,11 @@ resource "aws_cloudtrail" "shinjuku_cloudtrail01" {
 # Flow Log
 ############################################
 resource "aws_flow_log" "shinjuku_flowlog01" {
-  log_destination      = aws_s3_bucket.shinjuku_flow_logs_bucket01[0].arn
-  log_destination_type = "s3"
-  log_format           = "$${version} $${resource-type} $${account-id} $${tgw-id} $${tgw-attachment-id} $${tgw-src-vpc-account-id} $${tgw-dst-vpc-account-id} $${tgw-src-vpc-id} $${tgw-dst-vpc-id} $${tgw-pair-attachment-id} $${srcaddr} $${dstaddr} $${srcport} $${dstport} $${protocol} $${packets} $${bytes} $${start} $${end} $${log-status} $${flow-direction}"
-  traffic_type         = "ALL"
-  transit_gateway_id   = aws_ec2_transit_gateway.shinjuku_tgw01.id
+  log_destination          = aws_s3_bucket.shinjuku_flow_logs_bucket01[0].arn
+  log_destination_type     = "s3"
+  log_format               = "$${version} $${resource-type} $${account-id} $${tgw-id} $${tgw-attachment-id} $${tgw-src-vpc-account-id} $${tgw-dst-vpc-account-id} $${tgw-src-vpc-id} $${tgw-dst-vpc-id} $${tgw-pair-attachment-id} $${srcaddr} $${dstaddr} $${srcport} $${dstport} $${protocol} $${packets} $${bytes} $${start} $${end} $${log-status} $${flow-direction}"
+  traffic_type             = "ALL"
+  transit_gateway_id       = aws_ec2_transit_gateway.shinjuku_tgw01.id
   max_aggregation_interval = 60
 
   destination_options {
