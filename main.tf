@@ -343,7 +343,7 @@ resource "aws_iam_policy" "policy_ec2_read_secret" {
         "Effect" : "Allow",
         "Action" : ["secretsmanager:GetSecretValue"],
         # "Resource" : "arn:aws:secretsmanager:<REGION>:<ACCOUNT ID>:secret:echobase/rds/mysql*"
-        "Resource" : "arn:aws:secretsmanager:us-east-2:746669200167:secret:echobase/rds/mysql*"
+        "Resource" : "arn:aws:secretsmanager:ap-northeast-1:746669200167:secret:echobase/rds/mysql*"
       }
     ]
   })
@@ -611,10 +611,26 @@ resource "aws_cloudwatch_log_stream" "echobase_log_stream01" {
 }
 
 ############################################
-# Custom Metric + Alarm (Skeleton)
+# Log Metric Filter → Custom Metric
+############################################
+# Explanation: This filter watches the app log group for DB connection failures
+# and publishes a count to the custom metric the alarm monitors.
+resource "aws_cloudwatch_log_metric_filter" "echobase_db_errors_filter01" {
+  name           = "${local.name_prefix}-db-connection-errors"
+  log_group_name = aws_cloudwatch_log_group.echobase_log_group01.name
+  pattern        = "ERROR"
+
+  metric_transformation {
+    name      = "DBConnectionErrors"
+    namespace = "Lab/RDSApp"
+    value     = "1"
+  }
+}
+
+############################################
+# Custom Metric + Alarm
 ############################################
 # Explanation: Metrics are Echobase’s growls—when they spike, something is wrong.
-# NOTE: Students must emit the metric from app/agent; this just declares the alarm.
 # Added by Lonnie Hodges:  https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/aws-services-cloudwatch-metrics.html
 # https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/download-CloudWatch-Agent-on-EC2-Instance-commandline-first.html
 resource "aws_cloudwatch_metric_alarm" "echobase_db_alarm01" {

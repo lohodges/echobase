@@ -1,15 +1,14 @@
 variable "aws_region" {
   description = "AWS Region for the Echobase fleet to patrol."
   type        = string
-  default     = "us-east-2"
-  #default     = "ap-northeast-3"
+  #default     = "us-east-2"
+  default = "ap-northeast-1"
 }
 
 variable "aws_region_acm" {
   description = "CloudFront certifcate must be in us-east-1"
   type        = string
   default     = "us-east-1"
-  #default     = "ap-northeast-3"
 }
 
 variable "project_name" {
@@ -39,21 +38,21 @@ variable "private_subnet_cidrs" {
 variable "azs" {
   description = "Availability Zones list (match count with subnets)."
   type        = list(string)
-  default     = ["us-east-2a", "us-east-2b"] # TODO: student supplies
-  #default     = ["ap-northeast-3a", "ap-northeast-3b"] # TODO: student supplies
+  #default     = ["us-east-2a", "us-east-2b"] # TODO: student supplies
+  default = ["ap-northeast-1a", "ap-northeast-1c"] # TODO: student supplies
 }
 
 variable "ec2_ami_id" {
   description = "AMI ID for the EC2 app host."
   type        = string
-  default     = "ami-06f1fc9ae5ae7f31e" # us-east-2
-  #default     = "ami-0da7395a5e7b54590" # ap-northeast-3
+  default     = "ami-06cce67a5893f85f9" # ap-northeast-1
+  # default     = "ami-06f1fc9ae5ae7f31e" # us-east-2
 }
 
 variable "ec2_instance_type" {
   description = "EC2 instance size for the app."
   type        = string
-  default     = "t2.micro" # free tier eligible (us-east-2 and ap-northeast-3)
+  default     = "t2.micro" # free tier eligible (ap-northeast-1)
 }
 
 variable "db_engine" {

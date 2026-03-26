@@ -151,15 +151,74 @@ Then check logs:
 
 Expected:
   Explicit DB connection failure messages
+
+```
+~ ❯ aws logs filter-log-events \
+      --log-group-name /aws/ec2/echobase-rds-app \
+      --filter-pattern "ERROR"
+{
+    "events": [
+        {
+            "logStreamName": "echobase-rds-app",
+            "timestamp": 1772501458286,
+            "message": "ERROR: DB connection failed - (2003, \"Can't connect to MySQL server on 'echobase-rds01.cz00co24mrn8.ap-northeast-1.rds.amazonaws.com' ([Errno 111] Connection refused)\")",
+            "ingestionTime": 1772501458328,
+            "eventId": "39528103385260042104943181994103273755825886537964584960"
+        },
+        {
+            "logStreamName": "echobase-rds-app",
+            "timestamp": 1772501461783,
+            "message": "ERROR: DB connection failed - (2003, \"Can't connect to MySQL server on 'echobase-rds01.cz00co24mrn8.ap-northeast-1.rds.amazonaws.com' ([Errno 111] Connection refused)\")",
+            "ingestionTime": 1772501461788,
+            "eventId": "39528103463245748064204771124236865645188166486659760128"
+        }
+    ],
+    "searchedLogStreams": []
+}
+```
   
 7.6 Verify CloudWatch Alarm
 
     aws cloudwatch describe-alarms \
-      --alarm-name-prefix lab-db-connection
+      --alarm-name-prefix echobase-db-connection-failure
 
 Expected:
   Alarm present
   State transitions to ALARM during failure
+```
+1c_terrraform main  ? ❯ aws cloudwatch describe-alarms \
+      --alarm-name-prefix echobase-db-connection-failure
+{
+    "MetricAlarms": [
+        {
+            "AlarmName": "echobase-db-connection-failure",
+            "AlarmArn": "arn:aws:cloudwatch:ap-northeast-1:746669200167:alarm:echobase-db-connection-failure",
+            "AlarmConfigurationUpdatedTimestamp": "2026-03-02T20:08:41.736000-05:00",
+            "ActionsEnabled": true,
+            "OKActions": [],
+            "AlarmActions": [
+                "arn:aws:sns:ap-northeast-1:746669200167:echobase-db-incidents"
+            ],
+            "InsufficientDataActions": [],
+            "StateValue": "ALARM",
+            "StateReason": "Threshold Crossed: 1 datapoint [6.0 (03/03/26 01:35:00)] was greater than or equal to the threshold (3.0).",
+            "StateReasonData": "{\"version\":\"1.0\",\"queryDate\":\"2026-03-03T01:40:05.812+0000\",\"startDate\":\"2026-03-03T01:35:00.000+0000\",\"statistic\":\"Sum\",\"period\":300,\"recentDatapoints\":[6.0],\"threshold\":3.0,\"evaluatedDatapoints\":[{\"timestamp\":\"2026-03-03T01:35:00.000+0000\",\"sampleCount\":6.0,\"value\":6.0}]}",
+            "StateUpdatedTimestamp": "2026-03-02T20:40:05.858000-05:00",
+            "MetricName": "DBConnectionErrors",
+            "Namespace": "Lab/RDSApp",
+            "Statistic": "Sum",
+            "Dimensions": [],
+            "Period": 300,
+            "EvaluationPeriods": 1,
+            "Threshold": 3.0,
+            "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+            "TreatMissingData": "missing",
+            "StateTransitionedTimestamp": "2026-03-02T20:40:05.858000-05:00"
+        }
+    ],
+    "CompositeAlarms": []
+}
+```
 
 7.7 Incident Recovery Verification
 After restoring correct credentials or connectivity:
@@ -169,6 +228,18 @@ After restoring correct credentials or connectivity:
 Expected:
   Application resumes normal operation
   No redeployment required
+```
+1c_terrraform main  ? ❯ curl -I https://app.echobase.click/list
+HTTP/2 200
+content-type: text/html; charset=utf-8
+content-length: 65
+date: Tue, 03 Mar 2026 01:46:07 GMT
+server: Werkzeug/3.1.6 Python/3.9.25
+x-cache: Miss from cloudfront
+via: 1.1 50fb19eda678e6a896981a444fb09aa6.cloudfront.net (CloudFront)
+x-amz-cf-pop: MIA3-P3
+x-amz-cf-id: m2WOlRbokCLbQImJ3_2XAepcoOtr8o7YAAcRjQ76lKtaUc_aAedj5g==
+```
 
 8. Incident-Response Focus (What This Lab Teaches)
 During recovery, you must:

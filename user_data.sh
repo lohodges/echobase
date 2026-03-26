@@ -20,7 +20,7 @@ import random
 from datetime import datetime, timezone
 from flask import Flask, request, make_response, jsonify
 
-REGION = os.environ.get("AWS_REGION", "us-east-2")
+REGION = os.environ.get("AWS_REGION", "ap-northeast-1")
 SECRET_ID = os.environ.get("SECRET_ID", "echobase/rds/mysql")
 
 LOG_GROUP = "/aws/ec2/echobase-rds-app"
@@ -144,7 +144,7 @@ def private_feed():
     response_data.headers["Cache-Control"] = "private, no-store"
     return response_data
 
-@app.route("/example.txt")
+@app.route("/static/example.txt")
 def example_file():
     return app.send_static_file("example.txt")
 
